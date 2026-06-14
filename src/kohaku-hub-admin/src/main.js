@@ -1,0 +1,26 @@
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import { createRouter, createWebHistory } from "vue-router";
+import { routes } from "vue-router/auto-routes";
+import ElementPlus from "element-plus";
+import zhCn from "element-plus/es/locale/lang/zh-cn";
+import "element-plus/dist/index.css";
+import "element-plus/theme-chalk/dark/css-vars.css";
+import "uno.css";
+import "./styles/colors.css";
+import "./style.css";
+import App from "./App.vue";
+
+const app = createApp(App);
+const pinia = createPinia();
+
+const router = createRouter({
+  history: createWebHistory("/admin/"),
+  routes,
+});
+
+app.use(pinia);
+app.use(router);
+app.use(ElementPlus, { locale: zhCn });
+
+app.mount("#app");

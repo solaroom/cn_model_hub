@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kohaku-hub"
+version = "0.0.1"
+description = "A self-hosted HuggingFace alternative"
+authors = [
+    { name = "Shih-Ying Yeh(KohakuBlueLeaf)", email = "apolloyeh0123@gmail.com" },
+]
+license = { text = "AGPL-3" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "aiofiles",
+    "aiohttp",
+    "bcrypt",
+    "boto3",
+    "cachetools",
+    "click>=8.0",
+    "click-completion",
+    "cryptography>=42.0",
+    "duckdb",
+    "fastapi",
+    "fsspec",
+    "httpx",
+    "loguru",
+    "numpy",
+    "pandas",
+    "peewee",
+    "psycopg2-binary",
+    "pyarrow",
+    "pydantic[email]",
+    "python-multipart",
+    "pytz",
+    "pyyaml",
+    "questionary",
+    "redis[hiredis]>=5.0",
+    "requests",
+    "rich",
+    "toml",
+    "tomli; python_version < '3.11'",
+    "uvicorn",
+    "pillow",
+]
+urls = { "Homepage" = "https://kblueleaf.net/Kohaku-Hub" }
+
+[project.optional-dependencies]
+dev = [
+    "hfutils>=0.13.0",
+    "huggingface_hub>=0.20.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-mock>=3.12.0",
+    "safetensors>=0.7.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}

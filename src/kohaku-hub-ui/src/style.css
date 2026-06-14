@@ -1,0 +1,185 @@
+:root {
+  font-family:
+    "Inter",
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: #172033;
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.14), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #f3f6fb 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --kh-bg: #f3f6fb;
+  --kh-surface: rgba(255, 255, 255, 0.88);
+  --kh-surface-strong: #ffffff;
+  --kh-surface-muted: #eef4ff;
+  --kh-text: #172033;
+  --kh-text-muted: #5b6474;
+  --kh-border: rgba(148, 163, 184, 0.22);
+  --kh-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  --kh-shadow-soft: 0 10px 26px rgba(15, 23, 42, 0.05);
+  --kh-hero: linear-gradient(135deg, #0f172a 0%, #1d4ed8 48%, #14b8a6 100%);
+  --el-color-primary: #2563eb;
+  --el-color-primary-light-3: #3b82f6;
+  --el-color-primary-light-5: #60a5fa;
+  --el-color-primary-light-7: #93c5fd;
+  --el-color-primary-light-8: #bfdbfe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #1d4ed8;
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 999px;
+}
+
+.dark {
+  color: rgba(255, 255, 255, 0.92);
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.22), transparent 30%),
+    linear-gradient(180deg, #07111f 0%, #0b1220 100%);
+  --kh-bg: #0b1220;
+  --kh-surface: rgba(15, 23, 42, 0.84);
+  --kh-surface-strong: #111a2b;
+  --kh-surface-muted: #132238;
+  --kh-text: rgba(255, 255, 255, 0.92);
+  --kh-text-muted: #94a3b8;
+  --kh-border: rgba(148, 163, 184, 0.14);
+  --kh-shadow: 0 18px 48px rgba(2, 6, 23, 0.35);
+  --kh-shadow-soft: 0 10px 26px rgba(2, 6, 23, 0.22);
+  --kh-hero: linear-gradient(135deg, #020617 0%, #1d4ed8 52%, #0f766e 100%);
+  --el-color-primary: #60a5fa;
+  --el-color-primary-light-3: #93c5fd;
+  --el-color-primary-light-5: #bfdbfe;
+  --el-color-primary-light-7: #dbeafe;
+  --el-color-primary-light-8: #e0f2fe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #3b82f6;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--kh-bg);
+}
+
+body {
+  color: var(--kh-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.el-button--primary {
+  background-color: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
+  color: var(--el-color-white) !important;
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background-color: var(--el-color-primary-light-3) !important;
+  border-color: var(--el-color-primary-light-3) !important;
+}
+
+.el-button--primary:active {
+  background-color: var(--el-color-primary-dark-2) !important;
+  border-color: var(--el-color-primary-dark-2) !important;
+}
+
+.container-main {
+  width: min(1280px, calc(100vw - 32px));
+  margin: 0 auto;
+}
+
+.page-shell {
+  padding: 28px 0 48px;
+}
+
+.surface-panel,
+.card {
+  background: var(--kh-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--kh-border);
+  box-shadow: var(--kh-shadow-soft);
+  border-radius: 8px;
+}
+
+.card {
+  padding: 1.25rem;
+}
+
+.section-title {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.section-subtitle {
+  color: var(--kh-text-muted);
+  font-size: 0.98rem;
+}
+
+.glass-toolbar {
+  background: var(--kh-surface);
+  border: 1px solid var(--kh-border);
+  box-shadow: var(--kh-shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: var(--kh-surface-muted);
+  color: var(--kh-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.repo-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.repo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--kh-shadow);
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+.repo-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0)
+  );
+}
