@@ -14,7 +14,7 @@ COPY ./pyproject.toml .
 COPY ./README.md .
 RUN mkdir -p /app/src/kohakuhub
 RUN echo "" > /app/src/kohakuhub/__init__.py
-RUN uv venv "$VIRTUAL_ENV" && uv pip install -e .
+RUN uv venv --seed "$VIRTUAL_ENV" && uv pip install -e .
 
 COPY ./src/kohakuhub ./src/kohakuhub
 COPY ./scripts ./scripts
