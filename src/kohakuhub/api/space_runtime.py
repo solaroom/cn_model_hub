@@ -36,7 +36,7 @@ from kohakuhub.utils.lakefs import get_lakefs_client, lakefs_repo_name, resolve_
 logger = get_logger("SPACE_RUNTIME")
 router = APIRouter()
 
-RUNTIME_LOG_LINES = 200
+RUNTIME_LOG_LINES = 5000
 SUPPORTED_RUNTIME_REPO_TYPES = {"model", "space"}
 BUILTIN_QWEN_LOCAL_REQUIREMENTS = [
     "accelerate>=0.30",
@@ -45,9 +45,10 @@ BUILTIN_QWEN_LOCAL_REQUIREMENTS = [
     "safetensors>=0.4",
     "sentencepiece>=0.2",
     "socksio>=1.0",
-    "torch>=2.1",
     "transformers>=4.43",
 ]
+BUILTIN_QWEN_LOCAL_TORCH_REQUIREMENTS = ["torch>=2.1"]
+PYTORCH_CPU_INDEX_URL = "https://download.pytorch.org/whl/cpu"
 BUILTIN_QWEN_LOCAL_APP = r'''"""Local Qwen2.5 chat demo for cn_model_hub model repositories."""
 
 from __future__ import annotations
@@ -132,6 +133,7 @@ def chat(message: str, history):
             add_generation_prompt=True,
         )
         inputs = tokenizer([text], return_tensors="pt").to(device)
+        inputs.pop("token_type_ids", None)
         with torch.no_grad():
             generated_ids = model.generate(
                 **inputs,
@@ -231,7 +233,7 @@ def _normalize_repo_type(repo_type: str) -> str:
 
 
 def _runtime_root() -> Path:
-    root = Path(cfg.app.space_runtime_dir).expanduser()
+    root = Path(cfg.app.space_runtime_dir).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     return root
 
@@ -249,6 +251,58 @@ def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         return int(sock.getsockname()[1])
+
+
+def _runtime_venv_dir(state: RuntimeState) -> Path:
+    return state.workdir / ".cn_model_hub_runtime_venv"
+
+
+def _runtime_python(state: RuntimeState) -> Path:
+    venv = _runtime_venv_dir(state)
+    if os.name == "nt":
+        return venv / "Scripts" / "python.exe"
+    return venv / "bin" / "python"
+
+
+async def _ensure_runtime_venv(state: RuntimeState) -> Path:
+    python = _runtime_python(state)
+    if python.exists():
+        return python
+
+    venv = _runtime_venv_dir(state)
+    uv = shutil.which("uv")
+    if uv:
+        proc = await asyncio.create_subprocess_exec(
+            uv,
+            "venv",
+            "--seed",
+            str(venv),
+            cwd=str(state.workdir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+    else:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "venv",
+            "--upgrade-deps",
+            str(venv),
+            cwd=str(state.workdir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+
+    if proc.stdout:
+        while True:
+            line = await proc.stdout.readline()
+            if not line:
+                break
+            state.append_log(line.decode(errors="replace"))
+    code = await proc.wait()
+    if code != 0:
+        raise RuntimeError(f"runtime venv creation failed with code {code}")
+    return python
 
 
 def _repo_or_404(repo_type: str, namespace: str, name: str) -> Repository:
@@ -278,7 +332,8 @@ def _public_status(state: RuntimeState | None) -> dict:
         "revision": state.revision,
         "commit_id": state.commit_id,
         "proxy_url": state.proxy_url if state.status == "running" else "",
-        "logs": list(state.logs)[-80:],
+        "logs": list(state.logs),
+        "log_limit": RUNTIME_LOG_LINES,
     }
 
 
@@ -382,13 +437,45 @@ async def _install_requirements(state: RuntimeState) -> None:
         return
 
     state.append_log("Installing requirements.txt ...")
+    code = await _run_package_install(
+        state,
+        ["-r", str(requirements)],
+    )
+    if code != 0:
+        raise RuntimeError(f"requirements.txt install failed with code {code}")
+    marker.write_text(digest, encoding="utf-8")
+
+
+async def _run_package_install(state: RuntimeState, args: list[str]) -> int:
+    python = await _ensure_runtime_venv(state)
+    uv = shutil.which("uv")
+    if uv:
+        code = await _run_logged_process(
+            state,
+            [
+                uv,
+                "pip",
+                "install",
+                "--python",
+                str(python),
+                *args,
+            ],
+        )
+        if code == 0:
+            return 0
+        state.append_log(
+            f"uv package install failed with code {code}; retrying with pip ..."
+        )
+
+    return await _run_logged_process(
+        state,
+        [str(python), "-m", "pip", "install", *args],
+    )
+
+
+async def _run_logged_process(state: RuntimeState, command: list[str]) -> int:
     proc = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "-r",
-        str(requirements),
+        *command,
         cwd=str(state.workdir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
@@ -399,38 +486,39 @@ async def _install_requirements(state: RuntimeState) -> None:
             if not line:
                 break
             state.append_log(line.decode(errors="replace"))
-    code = await proc.wait()
-    if code != 0:
-        raise RuntimeError(f"requirements.txt install failed with code {code}")
-    marker.write_text(digest, encoding="utf-8")
+    return await proc.wait()
 
 
 async def _install_builtin_model_requirements(state: RuntimeState) -> None:
     digest = hashlib.sha256(
-        "\n".join(BUILTIN_QWEN_LOCAL_REQUIREMENTS).encode()
+        "\n".join(
+            [
+                os.getenv("KOHAKU_HUB_PYTORCH_CPU_INDEX_URL", PYTORCH_CPU_INDEX_URL),
+                *BUILTIN_QWEN_LOCAL_TORCH_REQUIREMENTS,
+                *BUILTIN_QWEN_LOCAL_REQUIREMENTS,
+            ]
+        ).encode()
     ).hexdigest()
     marker = state.workdir / ".builtin-qwen-local-requirements.sha256"
     if marker.exists() and marker.read_text(encoding="utf-8") == digest:
         return
 
     state.append_log("Installing built-in local Qwen runtime requirements ...")
-    proc = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        *BUILTIN_QWEN_LOCAL_REQUIREMENTS,
-        cwd=str(state.workdir),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
+    state.append_log("Installing CPU-only PyTorch runtime ...")
+    torch_code = await _run_package_install(
+        state,
+        [
+            "--extra-index-url",
+            os.getenv("KOHAKU_HUB_PYTORCH_CPU_INDEX_URL", PYTORCH_CPU_INDEX_URL),
+            *BUILTIN_QWEN_LOCAL_TORCH_REQUIREMENTS,
+        ],
     )
-    if proc.stdout:
-        while True:
-            line = await proc.stdout.readline()
-            if not line:
-                break
-            state.append_log(line.decode(errors="replace"))
-    code = await proc.wait()
+    if torch_code != 0:
+        raise RuntimeError(
+            f"built-in local model torch install failed with code {torch_code}"
+        )
+
+    code = await _run_package_install(state, BUILTIN_QWEN_LOCAL_REQUIREMENTS)
     if code != 0:
         raise RuntimeError(
             f"built-in local model requirements install failed with code {code}"
@@ -479,6 +567,7 @@ async def _start_runtime(
 
         try:
             app_file, using_builtin_model_app = _resolve_app_file(state)
+            runtime_python = await _ensure_runtime_venv(state)
             if install_requirements:
                 if using_builtin_model_app:
                     await _install_builtin_model_requirements(state)
@@ -504,8 +593,8 @@ async def _start_runtime(
                 }
             )
             state.process = await asyncio.create_subprocess_exec(
-                sys.executable,
-                str(app_file),
+                str(runtime_python),
+                str(app_file.resolve()),
                 cwd=str(workdir),
                 env=env,
                 stdout=asyncio.subprocess.PIPE,
@@ -614,8 +703,10 @@ async def proxy_runtime(
     headers = {
         key: value
         for key, value in request.headers.items()
-        if key.lower() not in HOP_BY_HOP_HEADERS and key.lower() != "host"
+        if key.lower() not in HOP_BY_HOP_HEADERS
+        and key.lower() not in {"host", "accept-encoding"}
     }
+    headers["accept-encoding"] = "identity"
     async with httpx.AsyncClient(follow_redirects=False, timeout=None) as client:
         upstream = await client.request(
             request.method,
