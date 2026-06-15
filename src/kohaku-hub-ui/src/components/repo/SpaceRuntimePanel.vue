@@ -213,6 +213,12 @@ async function refresh() {
 
 async function startRuntime() {
   starting.value = true;
+  runtime.value = {
+    ...runtime.value,
+    status: "starting",
+    message: "启动请求已发送，模型和依赖可能需要较长时间加载。",
+  };
+  updatePolling();
   try {
     const { data } = await runtimeAPI.start(
       props.repoType,
@@ -233,7 +239,16 @@ async function startRuntime() {
     }
   } catch (err) {
     console.error("Failed to start runtime:", err);
-    ElMessage.error(err.response?.data?.detail?.error || "启动运行时失败");
+    if (err.code === "ECONNABORTED") {
+      runtime.value = {
+        ...runtime.value,
+        status: "starting",
+        message: "启动仍在进行中，请继续查看运行日志。",
+      };
+      ElMessage.info("启动耗时较长，正在继续刷新状态");
+    } else {
+      ElMessage.error(err.response?.data?.detail?.error || "启动运行时失败");
+    }
     await refresh();
   } finally {
     starting.value = false;

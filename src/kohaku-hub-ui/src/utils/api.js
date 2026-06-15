@@ -640,7 +640,9 @@ export const runtimeAPI = {
   status: (repoType, namespace, name) =>
     api.get(`/api/${repoType}s/${namespace}/${name}/runtime`),
   start: (repoType, namespace, name, data = {}) =>
-    api.post(`/api/${repoType}s/${namespace}/${name}/runtime/start`, data),
+    api.post(`/api/${repoType}s/${namespace}/${name}/runtime/start`, data, {
+      timeout: 30 * 60 * 1000,
+    }),
   stop: (repoType, namespace, name) =>
     api.post(`/api/${repoType}s/${namespace}/${name}/runtime/stop`),
 };
