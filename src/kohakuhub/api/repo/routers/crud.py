@@ -50,6 +50,10 @@ from kohakuhub.api.quota.util import (
 from kohakuhub.api.repo.utils.gc import cleanup_repository_storage
 from kohakuhub.api.fallback.cache import get_cache as get_fallback_cache
 from kohakuhub.api.validation import normalize_name
+from kohakuhub.search_index import (
+    delete_repository as delete_search_document,
+    upsert_repository as upsert_search_document,
+)
 
 logger = get_logger("REPO")
 router = APIRouter()
@@ -340,13 +344,14 @@ async def create_repo(
             return hf_server_error(f"LakeFS repository creation failed: {str(e)}")
 
     # Store in database for listing/metadata
-    Repository.get_or_create(
+    repo_row, _created = Repository.get_or_create(
         repo_type=payload.type,
         namespace=namespace,
         name=payload.name,
         full_id=full_id,
         defaults={"private": resolved_private, "owner": user},
     )
+    upsert_search_document(repo_row)
 
     # Strict-freshness invalidation (#79): a fallback ghost binding for
     # this repo (written before the local repo existed) must be evicted
@@ -455,6 +460,7 @@ async def delete_repo(
             # - All LFS history (LFSObjectHistory.repository)
             repo_row.delete_instance()
         logger.success(f"Successfully deleted database records for: {full_id}")
+        delete_search_document(repo_type, full_id)
     except Exception as e:
         logger.exception(f"Database deletion failed for {full_id}", e)
         return hf_server_error(f"Database deletion failed for {full_id}: {str(e)}")
@@ -933,6 +939,10 @@ async def move_repo(
     cache = get_fallback_cache()
     cache.invalidate_repo(repo_type, from_namespace, from_name)
     cache.invalidate_repo(repo_type, to_namespace, to_name)
+    delete_search_document(repo_type, from_id)
+    moved_repo = get_repository(repo_type, to_namespace, to_name)
+    if moved_repo:
+        upsert_search_document(moved_repo)
 
     return {
         "success": True,

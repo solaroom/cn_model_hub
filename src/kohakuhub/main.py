@@ -14,8 +14,10 @@ from kohakuhub.api import (
     discussions,
     files,
     likes,
+    mlflow,
     misc,
     search,
+    space_runtime,
     settings,
     stats,
     validation,
@@ -77,6 +79,11 @@ async def lifespan(app: FastAPI):
     # (i.e., Valkey was restarted, even if the API was not).
     from kohakuhub.cache import init_cache, close_cache as _close_cache
     await init_cache()
+
+    # Initialize Meilisearch settings when configured. Search degrades to the
+    # database implementation if Meilisearch is disabled or still starting.
+    from kohakuhub.search_index import ensure_repository_index
+    ensure_repository_index()
 
     try:
         yield
@@ -195,6 +202,8 @@ app.include_router(avatar.router, prefix=cfg.app.api_base, tags=["avatars"])
 app.include_router(likes.router, prefix=cfg.app.api_base, tags=["likes"])
 app.include_router(discussions.router, prefix=cfg.app.api_base, tags=["discussions"])
 app.include_router(stats.router, prefix=cfg.app.api_base, tags=["stats"])
+app.include_router(space_runtime.router, prefix=cfg.app.api_base, tags=["spaces"])
+app.include_router(mlflow.router, prefix=cfg.app.api_base, tags=["mlflow"])
 app.include_router(invitation, prefix=cfg.app.api_base, tags=["invitations"])
 app.include_router(quota, tags=["quota"])
 app.include_router(admin.router, prefix="/admin/api", tags=["admin"])

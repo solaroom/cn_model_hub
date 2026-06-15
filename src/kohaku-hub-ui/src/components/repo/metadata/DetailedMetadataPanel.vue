@@ -4,6 +4,7 @@ import LicenseCard from "./LicenseCard.vue";
 import LanguageCard from "./LanguageCard.vue";
 import FrameworkCard from "./FrameworkCard.vue";
 import MetricsCard from "./MetricsCard.vue";
+import ChineseModelMetadataPanel from "./ChineseModelMetadataPanel.vue";
 import { formatMetadataKey } from "@/utils/metadata-helpers";
 
 const props = defineProps({
@@ -37,6 +38,8 @@ const specializedFields = new Set([
   "annotations_creators",
   "source_datasets",
   "eval_results",
+  "eval_results_chinese",
+  "cn_model",
 ]);
 
 const otherFields = computed(() => {
@@ -75,6 +78,11 @@ function formatValue(value) {
       v-if="
         repoType === 'model' && (metadata.library_name || metadata.pipeline_tag)
       "
+      :metadata="metadata"
+    />
+
+    <ChineseModelMetadataPanel
+      v-if="repoType === 'model' && (metadata.cn_model || metadata.eval_results_chinese)"
       :metadata="metadata"
     />
 

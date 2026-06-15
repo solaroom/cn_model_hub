@@ -636,6 +636,26 @@ export const repoAPI = {
       .then(normalizeCommitListResponse),
 };
 
+export const runtimeAPI = {
+  status: (repoType, namespace, name) =>
+    api.get(`/api/${repoType}s/${namespace}/${name}/runtime`),
+  start: (repoType, namespace, name, data = {}) =>
+    api.post(`/api/${repoType}s/${namespace}/${name}/runtime/start`, data),
+  stop: (repoType, namespace, name) =>
+    api.post(`/api/${repoType}s/${namespace}/${name}/runtime/stop`),
+};
+
+export const spaceRuntimeAPI = {
+  status: (namespace, name) => runtimeAPI.status("space", namespace, name),
+  start: (namespace, name, data = {}) =>
+    runtimeAPI.start("space", namespace, name, data),
+  stop: (namespace, name) => runtimeAPI.stop("space", namespace, name),
+};
+
+export const mlflowAPI = {
+  status: () => api.get("/api/mlflow/status"),
+};
+
 /**
  * Organization API
  */

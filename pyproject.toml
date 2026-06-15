@@ -3,11 +3,11 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "kohaku-hub"
+name = "cn-model-hub"
 version = "0.0.1"
-description = "A self-hosted HuggingFace alternative"
+description = "A self-hosted Chinese model hub with Spaces and MLflow integration"
 authors = [
-    { name = "Shih-Ying Yeh(KohakuBlueLeaf)", email = "apolloyeh0123@gmail.com" },
+    { name = "solaroom", email = "solaroom@users.noreply.github.com" },
 ]
 license = { text = "AGPL-3" }
 readme = "README.md"
@@ -26,6 +26,7 @@ dependencies = [
     "fsspec",
     "httpx",
     "loguru",
+    "meilisearch>=0.31",
     "numpy",
     "pandas",
     "peewee",
@@ -44,7 +45,7 @@ dependencies = [
     "uvicorn",
     "pillow",
 ]
-urls = { "Homepage" = "https://kblueleaf.net/Kohaku-Hub" }
+urls = { "Homepage" = "https://github.com/solaroom/cn_model_hub" }
 
 [project.optional-dependencies]
 dev = [

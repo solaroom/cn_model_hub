@@ -1,0 +1,8 @@
+accelerate>=0.30
+gradio>=4.44,<6
+huggingface_hub<1.0
+safetensors>=0.4
+sentencepiece>=0.2
+socksio>=1.0
+torch>=2.1
+transformers>=4.43

@@ -1,360 +1,198 @@
-# Kohaku Hub - Self-hosted HuggingFace Alternative
+# cn_model_hub
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/KohakuBlueleaf/KohakuHub/refs/heads/main/images/logo-banner-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/KohakuBlueleaf/KohakuHub/refs/heads/main/images/logo-banner.svg">
-    <img alt="kohub library logo" src="https://raw.githubusercontent.com/theblackcat102/KohakuHub/refs/heads/main/images/logo-banner.svg" width="600" height="80" style="max-width: 100%; padding-left: 100px">
-  </picture>
-  <br/>
-  <br/>
-</p> 
+`cn_model_hub` 是一个面向中文开源 AI 模型的自托管模型社区项目。它基于 FastAPI、Vue 3、LakeFS、MinIO/S3 和 PostgreSQL，提供模型、数据集、在线 Demo Space 和实验追踪的统一入口。
 
+## 当前功能
 
+- 模型、数据集、Space 仓库创建、上传、浏览和下载
+- Hugging Face Hub 风格的 API 路由和文件解析路径
+- LakeFS 版本管理，支持分支、提交记录和文件树
+- MinIO/S3 对象存储，支持大文件和 LFS 上传
+- Vue 3 前台页面和独立管理后台
+- 本地模型运行：模型仓库页面可直接启动本地推理 demo，默认支持 Qwen2.5-0.5B 类 Transformers CausalLM
+- 简化 Space 运行时：运行仓库根目录的 `app.py`，适合 Gradio 类 demo
+- 中文模型元数据规范：通过 README frontmatter 展示模型家族、参数量、中文能力、推理框架和中文评测结果
+- Meilisearch 中文模型搜索：索引仓库名、作者、类型和中文模型别名，服务不可用时自动回退数据库搜索
+- MLflow Tracking 集成，用于记录实验、指标和 artifact
 
-<p align="center">
-    <a href="https://github.com/KohakuBlueleaf/KohakuHub"><img alt="GitHub" src="https://img.shields.io/github/stars/KohakuBlueleaf/KohakuHub?style=social"></a>
-    <!-- <a href="https://github.com/KohakuBlueleaf/KohakuHub/releases"><img alt="GitHub release" src="https://img.shields.io/github/release/KohakuBlueleaf/KohakuHub.svg"></a>
-    <a href="https://pypi.org/project/kohub-cli"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/kohub-cli.svg"></a> -->
-    <a href="https://github.com/KohakuBlueleaf/KohakuHub/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/KohakuBlueleaf/KohakuHub"></a>
-    <a href="https://deepwiki.com/KohakuBlueleaf/KohakuHub"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
-</p>
+## 快速启动
 
----
-
-**🚀 Active Development - Alpha Release Ready**
-
-DEMO Site (**testing only, no guarantee on data integrity**): https://hub.kohaku-lab.org
-
-Self-hosted HuggingFace alternative with Git-like versioning for AI models and datasets. Compatible* with the official `huggingface_hub` Python client.
-
-> **Status:** Core features are complete and functional. Ready for testing and early adoption. APIs may evolve as we gather feedback.
-
-> *: May not perform exactly same behavior, if you meet any unexpected result, feel free to open issue.
-
-</div>
-
-|![1761148256913](image/README/1761148256913.png)|![1761148225463](image/README/1761148225463.png)|
-|-|-|
-
-**Join our community:** https://discord.gg/xWYrkyvJ2s
-
-## Features
-
-### KohakuHub (Model/Dataset Repository)
-
-- **HuggingFace Compatible** - Drop-in replacement for `huggingface_hub`, `hfutils`, `transformers`, `diffusers`
-- **External Source Fallback** - Browse HuggingFace (or other KohakuHub instances) when repos not found locally
-- **User External Tokens** - Configure your own tokens for external sources (HuggingFace, etc.) with encrypted storage
-- **Native Git Clone** - Standard Git operations (clone) with Git LFS support
-- **Git-Like Versioning** - Branches, commits, tags via LakeFS
-- **S3 Storage** - Works with MinIO, AWS S3, Cloudflare R2, etc.
-- **Large File Support** - Git LFS protocol with automatic LFS pointers (>1MB files)
-- **Organizations** - Multi-user namespaces with role-based access
-- **Quota Management** - Storage quotas for users and organizations
-- **Web UI** - Vue 3 interface with file browser, editor, commit history, Mermaid chart support
-- **Admin Portal** - Comprehensive admin interface for user and repository management
-- **CLI Tool** - Full-featured command-line interface with interactive TUI mode
-- **File Deduplication** - Content-addressed storage by SHA256
-- **Trending & Likes** - Repository popularity tracking
-- **Pure Python Git Server** - No native dependencies, memory-efficient
-
-### KohakuBoard (Experiment Tracking) - Standalone Repository
-
-**Repository:** https://github.com/KohakuBlueleaf/KohakuBoard
-
-- **Non-Blocking Logging** - Background writer process, zero training overhead
-- **Rich Data Types** - Scalars, images, videos, tables, histograms
-- **Hybrid Storage** - Lance (columnar) + SQLite (row-oriented) for optimal performance
-- **Local-First** - View experiments locally with `kobo open`, no server required
-- See the KohakuBoard repository for full documentation
-
-## Quick Start
-
-### Deploy with Docker
-
-> **Prereq:** LakeFS ≥ v0.54.0 (2021-11-08). The bundled `treeverse/lakefs:latest` image is always compatible; only relevant if you self-pin an older LakeFS image.
+先构建前端，再启动 Docker 服务：
 
 ```bash
-git clone https://github.com/KohakuBlueleaf/KohakuHub.git
-cd KohakuHub
-
-# Option 1: Use interactive generator (recommended)
-python scripts/generate_docker_compose.py
-
-# Option 2: Manual configuration
-# cp docker-compose.example.yml docker-compose.yml
-# Edit docker-compose.yml to change credentials and secrets
-
-# Build frontend and start services
 pnpm install
 pnpm run build
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
-For local frontend development from the repository root:
+访问地址：
+
+- 前台页面：http://127.0.0.1:28080
+- 管理后台：http://127.0.0.1:28080/admin
+- API 文档：http://127.0.0.1:48888/docs
+- LakeFS：http://127.0.0.1:28000
+- MinIO：http://127.0.0.1:29000
+- Meilisearch：http://127.0.0.1:27700
+- MLflow：http://127.0.0.1:25000
+
+## 搜索
+
+Docker Compose 已包含 `meilisearch` 服务。API 优先使用 Meilisearch 搜索模型、数据集和 Space；如果 Meilisearch 未启动或不可用，会自动回退到数据库搜索。
+
+搜索状态：
+
+```bash
+curl http://127.0.0.1:48888/api/search/index/status
+```
+
+首次接入或已有仓库需要重建索引：
+
+```bash
+curl -X POST http://127.0.0.1:48888/api/search/index/rebuild \
+  -H "X-Admin-Token: dev-admin-token-change-me"
+```
+
+本地开发配置：
+
+```bash
+KOHAKU_HUB_MEILISEARCH_ENABLED=true
+KOHAKU_HUB_MEILISEARCH_URL=http://127.0.0.1:27700
+KOHAKU_HUB_MEILISEARCH_API_KEY=dev-meili-master-key
+```
+
+## 本地模型推理
+
+模型仓库页面也有“运行”标签。点击“启动”后，后端会：
+
+1. 从 LakeFS 同步当前模型仓库 revision 的文件
+2. 如果仓库有 `app.py`，运行仓库自带 demo
+3. 如果仓库没有 `app.py`，自动使用内置 Qwen2.5-0.5B 本地推理模板
+4. 使用 `LOCAL_MODEL_PATH=<模型仓库物化目录>` 加载本地权重
+5. 通过 `/api/models/{namespace}/{name}/runtime/proxy/` 代理到前端 iframe
+
+这条链路跑的是上传到模型仓库里的本地模型文件，不是外部 API。内置模板等价于：
+
+```python
+AutoTokenizer.from_pretrained(LOCAL_MODEL_PATH, local_files_only=True)
+AutoModelForCausalLM.from_pretrained(LOCAL_MODEL_PATH, local_files_only=True)
+```
+
+Qwen2.5-0.5B 示例模板在：
+
+```text
+examples/models/qwen2.5-0.5b-local/
+```
+
+模型仓库推荐文件结构：
+
+```text
+README.md
+app.py                  # 可选；没有时使用平台内置本地 Qwen 模板
+requirements.txt        # 可选；没有时使用平台内置本地 Qwen 依赖
+config.json
+generation_config.json
+model.safetensors
+tokenizer.json
+tokenizer_config.json
+vocab.json
+merges.txt
+```
+
+下载 Qwen2.5-0.5B-Instruct 文件：
+
+```bash
+huggingface-cli download Qwen/Qwen2.5-0.5B-Instruct \
+  --local-dir ./qwen2.5-0.5b-local \
+  --local-dir-use-symlinks False
+```
+
+## Space Demo
+
+Space 仓库上传后，只需要在仓库根目录提供 `app.py`。如果有依赖，放在 `requirements.txt`：
+
+```text
+app.py
+requirements.txt
+README.md
+```
+
+进入 Space 仓库页面后打开“运行”标签，点击“启动”。后端会：
+
+1. 从 LakeFS 同步该 Space 当前 revision 的文件
+2. 可选安装 `requirements.txt`
+3. 运行 `python app.py`
+4. 通过 `/api/spaces/{namespace}/{name}/runtime/proxy/` 代理到前端 iframe
+
+运行环境会注入这些变量，千问或其他对话 demo 可以直接读取：
+
+```bash
+PORT
+GRADIO_SERVER_NAME
+GRADIO_SERVER_PORT
+GRADIO_ROOT_PATH
+CN_MODEL_HUB_SPACE_ID
+MLFLOW_TRACKING_URI
+```
+
+## MLflow
+
+项目的 Docker Compose 已包含 `mlflow` 服务。它使用本地 `mlflow-master/` 源码启动 MLflow Tracking Server，数据保存在：
+
+```text
+hub-meta/mlflow-data/
+```
+
+API 和 Space 运行时会收到：
+
+```bash
+MLFLOW_TRACKING_URI=http://mlflow:5000
+KOHAKU_HUB_MLFLOW_TRACKING_URI=http://mlflow:5000
+```
+
+本地开发时可以使用 `.env.dev.example` 中的：
+
+```bash
+MLFLOW_TRACKING_URI=http://127.0.0.1:25000
+```
+
+## 常用开发命令
 
 ```bash
 pnpm run dev:ui
 pnpm run dev:admin
+pytest
 ```
 
-**Access:**
-- Web UI & API: http://localhost:28080 (all traffic goes here)
-- Web Admin Portal: http://localhost:28080/admin
-    - Use the value of KOHAKU_HUB_ADMIN_SECRET_TOKEN to login the portal
-- API Docs (Swagger): http://localhost:48888/docs (direct access for development)
-- LakeFS UI: http://localhost:28000
-- MinIO Console: http://localhost:29000
+## 当前进度
 
-**LakeFS credentials:** Auto-generated in `docker/hub-meta/hub-api/credentials.env`
+阶段一 MVP 约 80%-85%：
 
-### Use with Python
+- 已完成用户注册/登录、Token、仓库创建/删除/移动
+- 已完成模型、数据集、Space 的文件上传、下载、文件树、README 展示
+- 已完成 LakeFS 版本管理、MinIO/S3 大文件存储、LFS 基础链路
+- 已完成中文模型元数据规范和模型页展示
+- 已接入 Meilisearch，搜索可按中文别名召回模型，并带数据库兜底
+- 待补：真实演示数据、上传模型卡强校验、完整课堂演示流程复测
 
-```python
-import os
-os.environ["HF_ENDPOINT"] = "http://localhost:28080"
-os.environ["HF_TOKEN"] = "your_token_here"
+阶段二 社区和在线 Demo 约 65%-75%：
 
-from huggingface_hub import HfApi
+- 已完成点赞和基础讨论 API
+- 已完成 Space 运行时，可运行 Gradio `app.py`
+- 已完成模型仓库本地推理运行时，可直接运行 Qwen2.5-0.5B 类本地模型
+- 已完成 MLflow Tracking 基础接入
+- 待补：讨论前端体验、Space/模型运行密钥和环境变量管理、运行隔离、资源限制、持久日志、Streamlit 支持
 
-api = HfApi()
+## 下一步
 
-# Create repo
-api.create_repo("my-org/my-model", repo_type="model")
+建议队友接手时按这个顺序推进：
 
-# Upload file
-api.upload_file(
-    path_or_fileobj="model.safetensors",
-    path_in_repo="model.safetensors",
-    repo_id="my-org/my-model",
-)
+1. 开 Docker 后跑全链路：注册用户 -> 创建模型 -> 上传 Qwen2.5-0.5B 文件 -> 启动模型运行 -> 对话。
+2. 重建 Meilisearch 索引并验证中文搜索：
+   `POST /api/search/index/rebuild`。
+3. 给 Space/模型运行时增加环境变量和密钥配置页面。
+4. 把讨论功能补成完整前端体验。
+5. 做阶段三：中文评测榜单、评测任务提交、MLflow run 和模型仓库绑定。
 
-# Download file
-api.hf_hub_download(repo_id="my-org/my-model", filename="model.safetensors")
-```
+## 说明
 
-### Use with Transformers/Diffusers
-
-```python
-import os
-os.environ["HF_ENDPOINT"] = "http://localhost:28080"
-os.environ["HF_TOKEN"] = "your_token_here" # needed for private repository
-
-from diffusers import AutoencoderKL
-vae = AutoencoderKL.from_pretrained("my-org/my-model")
-```
-
-### CLI Tool
-
-```bash
-# Install
-pip install -e .
-
-# Interactive mode
-kohub-cli interactive
-
-# Command mode
-kohub-cli auth login
-kohub-cli repo create my-org/my-model --type model
-kohub-cli repo list --type model
-kohub-cli org create my-org
-kohub-cli org member add my-org alice --role admin
-```
-
-See [docs/CLI.md](./docs/CLI.md) for complete CLI documentation.
-
-### Git Clone (Native Git Support)
-
-```bash
-# Clone repository (fast - only metadata and small files)
-git clone http://localhost:28080/namespace/repo-name.git
-
-# For private repositories, use token authentication
-git clone http://username:your-token@localhost:28080/namespace/private-repo.git
-
-# Install Git LFS for large files
-cd repo-name
-git lfs install
-git lfs pull  # Download large files (>1MB)
-
-# (push operations coming soon)
-```
-
-**How it works:**
-- Files **<1MB**: Included directly in Git pack (fast clone)
-- Files **>=1MB**: Stored as LFS pointers (download via `git lfs pull`)
-- Pure Python implementation (no pygit2/libgit2 dependencies)
-- Automatic `.gitattributes` and `.lfsconfig` generation
-- Memory-efficient (handles repos of any size)
-
-See [docs/Git.md](./docs/Git.md) for complete Git clone documentation and implementation details.
-
-## Architecture
-
-**Stack:**
-- **FastAPI** - HuggingFace-compatible API
-- **LakeFS** (≥ v0.54.0) - Git-like versioning (branches, commits, diffs) via REST API
-- **MinIO/S3** - Object storage with deduplication
-- **PostgreSQL/SQLite** - Metadata database (synchronous with db.atomic() transactions)
-- **Vue 3** - Modern web interface
-
-**Implementation Notes:**
-- **LakeFS:** Uses REST API directly (lakefs_rest_client.py), providing pure async operations. Minimum supported version is **v0.54.0** (released 2021-11-08) — the file-list `expand=true` path uses `logCommits`'s `objects=` / `prefixes=` / `limit=` filters, introduced in that release. Pre-v0.54 servers silently ignore those parameters and would surface incorrect `lastCommit` values; the docker bundle pins `treeverse/lakefs:latest` so default deployments are always compatible.
-- **Database:** Synchronous operations with Peewee ORM and `db.atomic()` for transaction safety. Supports multi-worker deployment (4-8 workers) for horizontal scaling.
-
-**Data Flow:**
-1. Small files (<10MB) → Base64 in commit payload
-2. Large files (>10MB) → Direct S3 upload via presigned URL (LFS protocol)
-3. All files linked to LakeFS commits for version control
-4. Downloads → 302 redirect to S3 presigned URL (no proxy)
-
-See [docs/API.md](./docs/API.md) for detailed API documentation.
-
-## Configuration
-
-**Environment Variables** (in `docker-compose.yml`):
-
-```yaml
-# Application
-KOHAKU_HUB_BASE_URL=http://localhost:28080
-KOHAKU_HUB_LFS_THRESHOLD_BYTES=10000000  # 10MB
-
-# S3 Storage
-KOHAKU_HUB_S3_PUBLIC_ENDPOINT=http://localhost:29001
-KOHAKU_HUB_S3_BUCKET=hub-storage
-
-# Database
-KOHAKU_HUB_DB_BACKEND=postgres
-KOHAKU_HUB_DATABASE_URL=postgresql://hub:pass@postgres:5432/hubdb
-
-# Auth
-KOHAKU_HUB_SESSION_SECRET=change-me-in-production
-KOHAKU_HUB_REQUIRE_EMAIL_VERIFICATION=false
-
-# Admin Portal
-KOHAKU_HUB_ADMIN_ENABLED=true
-KOHAKU_HUB_ADMIN_SECRET_TOKEN=change-me-in-production
-
-# External Tokens (for user-specific fallback tokens)
-KOHAKU_HUB_DATABASE_KEY=$(openssl rand -hex 32)  # Required for encryption
-```
-
-See [config-example.toml](./config-example.toml) for all options.
-
-### External Fallback Tokens
-
-Users can provide their own tokens for external sources (e.g., HuggingFace) to access private repositories:
-
-**Via Web UI:**
-1. Go to Settings → External Tokens
-2. Add your HuggingFace token
-3. Tokens are encrypted and stored securely
-
-**Via CLI:**
-```bash
-kohub-cli settings user external-tokens add --url https://huggingface.co --token hf_abc123
-```
-
-**Via Authorization Header (API/programmatic):**
-```bash
-curl -H "Authorization: Bearer my_token|https://huggingface.co,hf_abc123" \
-  http://localhost:28080/api/models/org/model
-```
-
-**How it works:**
-- User tokens override admin-configured tokens
-- Tokens encrypted at rest using AES-256
-- Works with session auth, API tokens, and anonymous requests
-- Automatically used when repos not found locally
-
-## Development
-
-**Backend:**
-```bash
-pip install -e .
-
-# Single worker (development)
-uvicorn kohakuhub.main:app --reload --port 48888
-
-# Multi-worker (production-like testing)
-uvicorn kohakuhub.main:app --host 0.0.0.0 --port 48888 --workers 4
-
-# Note: Database uses db.atomic() for transaction safety in multi-worker setups
-# Note: In production, access via nginx on port 28080
-```
-
-**Frontend:**
-```bash
-# Install deps for both apps once
-pnpm install
-
-# Recommended: run main UI + admin together on one origin.
-# Main UI on http://localhost:5173, admin mounted at http://localhost:5173/admin.
-# (Internally the admin Vite server runs on :5174 and is reverse-proxied by the main UI.)
-make ui
-
-# Alternatives:
-make ui-only   # Only the main UI on :5173 (no admin)
-make admin     # Only the admin UI on :5174
-```
-
-**Testing:**
-```bash
-python scripts/test.py
-python scripts/test_auth.py
-```
-
-## Documentation
-
-- [docs/setup.md](./docs/setup.md) - Setup and installation guide
-- [docs/deployment.md](./docs/deployment.md) - Deployment architecture
-- [docs/ports.md](./docs/ports.md) - Port configuration reference
-- [docs/API.md](./docs/API.md) - API endpoints and workflows
-- [docs/CLI.md](./docs/CLI.md) - Command-line tool usage
-- [docs/Admin.md](./docs/Admin.md) - Admin portal & fallback system
-- [docs/Git.md](./docs/Git.md) - Git clone support
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Contributing guide & roadmap
-
-## Security Notes
-
-⚠️ **Before Production:**
-- Change all default passwords in `docker-compose.yml`
-- Set secure `KOHAKU_HUB_SESSION_SECRET`
-- Set secure `KOHAKU_HUB_ADMIN_SECRET_TOKEN`
-- Set secure `LAKEFS_AUTH_ENCRYPT_SECRET_KEY`
-- Use HTTPS with reverse proxy
-- Only expose port 28080 (Web UI)
-
-## Known Limitations
-
-While core features are stable for alpha release, some advanced features are still in development:
-
-- Repository transfer/squash/delete are experimental/not stable
-- Some HuggingFace API endpoints may be incomplete
-    - Feel free to open issue in this case, but remember to provide full information and minimal reproduction!
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md#project-status) for full roadmap.
-
-## License
-
-AGPL-3.0
-
-**NOTE**: We may release some new features under non-commercial license.
-
-**Commercial Exemption**: If you need any commercial exemption licenses (to not fully open source your system built upon KohakuHub), please contact kohaku@kblueleaf.net
-
-## Support
-
-- **Discord:** https://discord.gg/xWYrkyvJ2s
-- **Issues:** https://github.com/KohakuBlueleaf/KohakuHub/issues
-
-## Acknowledgments
-
-- [HuggingFace](https://huggingface.co/) - API design and client library
-- [LakeFS](https://lakefs.io/) - Data versioning engine (REST API)
-- [MinIO](https://min.io/) - Object storage
-
----
-
-**Ready for Alpha Testing!** Core features are stable, but APIs may evolve based on community feedback. Use in development/testing environments and help us improve.
+`mlflow-master/` 是本地 MLflow 源码挂载目录，默认不提交到本仓库。Space 运行缓存、MinIO 数据和数据库数据也不会提交，分别位于 `.space-runtimes/`、`hub-storage/` 和 `hub-meta/`。

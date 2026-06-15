@@ -110,6 +110,16 @@ class CacheConfig(BaseModel):
     socket_connect_timeout_seconds: float = 0.5
 
 
+class SearchConfig(BaseModel):
+    """Repository search backend configuration."""
+
+    meilisearch_enabled: bool = False
+    meilisearch_url: str = ""
+    meilisearch_api_key: str = ""
+    meilisearch_timeout_seconds: int = 3
+    meilisearch_task_timeout_ms: int = 5000
+
+
 class AppConfig(BaseModel):
     base_url: str = "http://localhost:48888"
     # Allows local dev to expose frontend-facing URLs while backend self-calls stay direct.
@@ -186,6 +196,11 @@ class AppConfig(BaseModel):
     ]
     # Site identification
     site_name: str = "KohakuHub"  # Configurable site name (e.g., "MyCompany Hub")
+    # Simplified local Space runtime.
+    space_runtime_dir: str = ".space-runtimes"
+    space_runtime_install_requirements: bool = True
+    # MLflow tracking endpoint. Also exported to Space runtimes as MLFLOW_TRACKING_URI.
+    mlflow_tracking_uri: str = ""
     # Log settings
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     log_format: str = (
@@ -203,6 +218,7 @@ class Config(BaseModel):
     quota: QuotaConfig = QuotaConfig()
     fallback: FallbackConfig = FallbackConfig()
     cache: CacheConfig = CacheConfig()
+    search: SearchConfig = SearchConfig()
     app: AppConfig
 
     def validate_production_safety(self) -> list[str]:
@@ -444,6 +460,31 @@ def load_config(path: str = None) -> Config:
     if cache_env:
         config_from_env["cache"] = cache_env
 
+    # Search (Meilisearch)
+    search_env = {}
+    if "KOHAKU_HUB_MEILISEARCH_ENABLED" in os.environ:
+        search_env["meilisearch_enabled"] = (
+            os.environ["KOHAKU_HUB_MEILISEARCH_ENABLED"].lower() == "true"
+        )
+    if "KOHAKU_HUB_MEILISEARCH_URL" in os.environ:
+        search_env["meilisearch_url"] = os.environ["KOHAKU_HUB_MEILISEARCH_URL"]
+        if "KOHAKU_HUB_MEILISEARCH_ENABLED" not in os.environ:
+            search_env["meilisearch_enabled"] = True
+    if "KOHAKU_HUB_MEILISEARCH_API_KEY" in os.environ:
+        search_env["meilisearch_api_key"] = os.environ[
+            "KOHAKU_HUB_MEILISEARCH_API_KEY"
+        ]
+    if "KOHAKU_HUB_MEILISEARCH_TIMEOUT" in os.environ:
+        search_env["meilisearch_timeout_seconds"] = int(
+            os.environ["KOHAKU_HUB_MEILISEARCH_TIMEOUT"]
+        )
+    if "KOHAKU_HUB_MEILISEARCH_TASK_TIMEOUT_MS" in os.environ:
+        search_env["meilisearch_task_timeout_ms"] = int(
+            os.environ["KOHAKU_HUB_MEILISEARCH_TASK_TIMEOUT_MS"]
+        )
+    if search_env:
+        config_from_env["search"] = search_env
+
     # Fallback
     fallback_env = {}
     if "KOHAKU_HUB_FALLBACK_ENABLED" in os.environ:
@@ -507,6 +548,19 @@ def load_config(path: str = None) -> Config:
         app_env["lfs_auto_gc"] = os.environ["KOHAKU_HUB_LFS_AUTO_GC"].lower() == "true"
     if "KOHAKU_HUB_SITE_NAME" in os.environ:
         app_env["site_name"] = os.environ["KOHAKU_HUB_SITE_NAME"]
+    if "KOHAKU_HUB_SPACE_RUNTIME_DIR" in os.environ:
+        app_env["space_runtime_dir"] = os.environ["KOHAKU_HUB_SPACE_RUNTIME_DIR"]
+    if "KOHAKU_HUB_SPACE_RUNTIME_INSTALL_REQUIREMENTS" in os.environ:
+        app_env["space_runtime_install_requirements"] = (
+            os.environ["KOHAKU_HUB_SPACE_RUNTIME_INSTALL_REQUIREMENTS"].lower()
+            == "true"
+        )
+    if "KOHAKU_HUB_MLFLOW_TRACKING_URI" in os.environ:
+        app_env["mlflow_tracking_uri"] = os.environ[
+            "KOHAKU_HUB_MLFLOW_TRACKING_URI"
+        ]
+    if "MLFLOW_TRACKING_URI" in os.environ:
+        app_env["mlflow_tracking_uri"] = os.environ["MLFLOW_TRACKING_URI"]
     if "KOHAKU_HUB_DEBUG_LOG_PAYLOADS" in os.environ:
         app_env["debug_log_payloads"] = (
             os.environ["KOHAKU_HUB_DEBUG_LOG_PAYLOADS"].lower() == "true"
@@ -532,6 +586,7 @@ def load_config(path: str = None) -> Config:
     quota_config = QuotaConfig(**merged_config.get("quota", {}))
     fallback_config = FallbackConfig(**merged_config.get("fallback", {}))
     cache_config = CacheConfig(**merged_config.get("cache", {}))
+    search_config = SearchConfig(**merged_config.get("search", {}))
     app_config = AppConfig(**merged_config.get("app", {}))
 
     return Config(
@@ -543,6 +598,7 @@ def load_config(path: str = None) -> Config:
         quota=quota_config,
         fallback=fallback_config,
         cache=cache_config,
+        search=search_config,
         app=app_config,
     )
 

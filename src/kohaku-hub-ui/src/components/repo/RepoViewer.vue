@@ -206,8 +206,21 @@
                   ? '模型卡片'
                   : repoType === 'dataset'
                     ? '数据集卡片'
-                    : '应用'
+                    : '说明'
               }}
+            </button>
+            <button
+              v-if="repoType === 'model' || repoType === 'space'"
+              :class="[
+                'px-4 py-2 font-medium transition-colors',
+                activeTab === 'runtime'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200',
+              ]"
+              @click="navigateToTab('runtime')"
+            >
+              <div class="i-carbon-application-web mr-1 inline-block" />
+              运行
             </button>
             <button
               :class="[
@@ -345,6 +358,21 @@
             :name="name"
             :branch="currentBranch"
             :files="fileTree"
+          />
+        </div>
+
+        <div
+          v-if="
+            activeTab === 'runtime' &&
+            (repoType === 'model' || repoType === 'space')
+          "
+        >
+          <SpaceRuntimePanel
+            :repo-type="repoType"
+            :namespace="namespace"
+            :name="name"
+            :branch="currentBranch"
+            :is-owner="isOwner"
           />
         </div>
 
@@ -1048,6 +1076,7 @@ import DetailedMetadataPanel from "@/components/repo/metadata/DetailedMetadataPa
 import ReferencedDatasetsCard from "@/components/repo/metadata/ReferencedDatasetsCard.vue";
 import SidebarRelationshipsCard from "@/components/repo/metadata/SidebarRelationshipsCard.vue";
 import DatasetViewerTab from "@/components/repo/DatasetViewerTab.vue";
+import SpaceRuntimePanel from "@/components/repo/SpaceRuntimePanel.vue";
 import ErrorState from "@/components/common/ErrorState.vue";
 import FilePreviewDialog from "@/components/repo/preview/FilePreviewDialog.vue";
 import TarBrowserDialog from "@/components/repo/preview/TarBrowserDialog.vue";
@@ -1251,6 +1280,8 @@ const hasMetadataHeader = computed(() => {
     readmeMetadata.value.language ||
     readmeMetadata.value.library_name ||
     readmeMetadata.value.pipeline_tag ||
+    readmeMetadata.value.cn_model ||
+    readmeMetadata.value.eval_results_chinese ||
     readmeMetadata.value.task_categories ||
     readmeMetadata.value.size_categories
   );
@@ -1374,6 +1405,12 @@ function navigateToTab(tab) {
       router.push({
         path: `/${props.repoType}s/${props.namespace}/${props.name}`,
         query: { tab: "viewer" },
+      });
+      break;
+    case "runtime":
+      router.push({
+        path: `/${props.repoType}s/${props.namespace}/${props.name}`,
+        query: { tab: "runtime" },
       });
       break;
     default:

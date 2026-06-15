@@ -200,7 +200,7 @@ def create_repository(
 
     NOTE: Wrap in db.atomic() if checking existence first.
     """
-    return Repository.create(
+    repo = Repository.create(
         repo_type=repo_type,
         namespace=namespace,
         name=name,
@@ -208,6 +208,10 @@ def create_repository(
         private=private,
         owner=owner,  # ForeignKey to User (can be user or org)
     )
+    from kohakuhub.search_index import upsert_repository as upsert_search_document
+
+    upsert_search_document(repo)
+    return repo
 
 
 def delete_repository(repo: Repository) -> None:
@@ -219,7 +223,12 @@ def delete_repository(repo: Repository) -> None:
     - All staging uploads (StagingUpload.repository)
     - All LFS history (LFSObjectHistory.repository)
     """
+    repo_type = repo.repo_type
+    full_id = repo.full_id
     repo.delete_instance()
+    from kohakuhub.search_index import delete_repository as delete_search_document
+
+    delete_search_document(repo_type, full_id)
 
 
 def update_repository(repo: Repository, **fields) -> None:
@@ -227,6 +236,9 @@ def update_repository(repo: Repository, **fields) -> None:
     for key, value in fields.items():
         setattr(repo, key, value)
     repo.save()
+    from kohakuhub.search_index import upsert_repository as upsert_search_document
+
+    upsert_search_document(repo)
 
 
 def list_repositories(

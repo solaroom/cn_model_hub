@@ -53,6 +53,10 @@ export function normalizeMetadata(metadata) {
     "language_creators",
     "source_datasets",
     "size_categories",
+    "input_modalities",
+    "output_modalities",
+    "inference_frameworks",
+    "quantization",
   ];
 
   arrayFields.forEach((field) => {

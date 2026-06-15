@@ -38,9 +38,9 @@
                 size="large"
                 round
                 class="!border-white/35 !bg-white/8 !px-6 !text-white hover:!bg-white/14"
-                @click="$router.push('/self-hosted')"
+                @click="$router.push('/spaces')"
               >
-                查看项目说明
+                体验在线 Demo
               </el-button>
             </div>
           </div>
@@ -66,56 +66,6 @@
                 在线 Demo
               </div>
               <div class="mt-2 text-3xl font-semibold">{{ stats.spaces }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="container-main mt-8">
-      <div class="grid gap-4 md:grid-cols-3">
-        <div class="card">
-          <div class="flex items-start gap-3">
-            <div
-              class="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300"
-            >
-              <div class="i-carbon-catalog text-2xl" />
-            </div>
-            <div>
-              <div class="font-semibold">模型托管与分享</div>
-              <div class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                支持中文 NLP、多模态和垂直领域模型的统一展示、下载与版本追踪。
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="flex items-start gap-3">
-            <div
-              class="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
-            >
-              <div class="i-carbon-chart-evaluation text-2xl" />
-            </div>
-            <div>
-              <div class="font-semibold">中文评测基准</div>
-              <div class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                为 CLUE、C-Eval、CMMLU 等任务预留排行榜入口，便于比较模型效果。
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="flex items-start gap-3">
-            <div
-              class="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300"
-            >
-              <div class="i-carbon-forum text-2xl" />
-            </div>
-            <div>
-              <div class="font-semibold">社区讨论与复现</div>
-              <div class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                围绕模型使用、数据质量、Demo 效果和实验结论沉淀中文讨论。
-              </div>
             </div>
           </div>
         </div>

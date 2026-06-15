@@ -54,6 +54,22 @@
           </el-select>
         </div>
       </div>
+
+      <div
+        v-if="searchPresets.length"
+        class="mt-4 flex flex-wrap gap-2"
+      >
+        <el-button
+          v-for="preset in searchPresets"
+          :key="preset.value"
+          size="small"
+          round
+          :type="searchQuery === preset.value ? 'primary' : 'default'"
+          @click="applySearchPreset(preset.value)"
+        >
+          {{ preset.label }}
+        </el-button>
+      </div>
     </div>
 
     <!-- Repository List -->
@@ -142,12 +158,24 @@ const pageTitle = computed(() => {
 
 const pageDescription = computed(() => {
   const descriptions = {
-    model: "浏览并共享机器学习模型",
+    model: "浏览并共享中文开源 AI 模型",
     dataset: "浏览并共享机器学习数据集",
     space: "浏览模型演示与应用空间",
   };
   return descriptions[props.repoType] || "";
 });
+
+const modelSearchPresets = [
+  { label: "千问", value: "千问" },
+  { label: "DeepSeek", value: "deepseek" },
+  { label: "中文对话", value: "中文 对话" },
+  { label: "嵌入模型", value: "嵌入 模型" },
+  { label: "多模态", value: "多模态" },
+];
+
+const searchPresets = computed(() =>
+  props.repoType === "model" ? modelSearchPresets : [],
+);
 
 const loading = ref(true);
 const repos = ref([]);
@@ -172,6 +200,7 @@ const form = reactive({
 });
 
 let searchDebounceHandle = null;
+let skipNextSearchWatcher = false;
 let repositoryRequestId = 0;
 
 const rules = {
@@ -191,6 +220,18 @@ const rules = {
 
 function currentSearchTerm() {
   return searchQuery.value.trim();
+}
+
+function applySearchPreset(value) {
+  if (searchQuery.value !== value) {
+    skipNextSearchWatcher = true;
+    searchQuery.value = value;
+  }
+  if (searchDebounceHandle) {
+    clearTimeout(searchDebounceHandle);
+    searchDebounceHandle = null;
+  }
+  loadRepositoryResults();
 }
 
 async function loadRepos(requestId) {
@@ -315,6 +356,10 @@ watch(sortBy, () => {
 });
 
 watch(searchQuery, () => {
+  if (skipNextSearchWatcher) {
+    skipNextSearchWatcher = false;
+    return;
+  }
   if (searchDebounceHandle) {
     clearTimeout(searchDebounceHandle);
   }
