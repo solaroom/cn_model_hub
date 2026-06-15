@@ -55,14 +55,18 @@ describe("TheHeader", () => {
     });
   }
 
+  function findButtonByText(wrapper, text) {
+    return wrapper.findAll("button").find((button) => button.text().includes(text));
+  }
+
   it("renders visitor navigation and toggles theme", async () => {
     const themeStore = useThemeStore();
     const wrapper = mountHeader();
 
-    expect(wrapper.text()).toContain("Models");
-    expect(wrapper.text()).toContain("Datasets");
-    expect(wrapper.text()).toContain("Login");
-    expect(wrapper.text()).toContain("Sign Up");
+    expect(wrapper.text()).toContain("模型");
+    expect(wrapper.text()).toContain("数据集");
+    expect(wrapper.text()).toContain("登录");
+    expect(wrapper.text()).toContain("注册");
 
     const buttons = wrapper.findAll("button");
     await buttons[0].trigger("click");
@@ -71,11 +75,7 @@ describe("TheHeader", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
     expect(localStorage.getItem("theme")).toBe("dark");
 
-    const signUpButton = buttons.find((button) =>
-      button.text().includes("Sign Up"),
-    );
-    await signUpButton.trigger("click");
-
+    await findButtonByText(wrapper, "注册").trigger("click");
     expect(mocks.router.push).toHaveBeenCalledWith("/register");
   });
 
@@ -89,34 +89,22 @@ describe("TheHeader", () => {
     const wrapper = mountHeader();
 
     expect(wrapper.text()).toContain("alice");
-    expect(wrapper.text()).toContain("New Model");
-    expect(wrapper.text()).toContain("New Dataset");
-    expect(wrapper.text()).toContain("New Space");
-    expect(wrapper.text()).toContain("New Organization");
+    expect(wrapper.text()).toContain("新建模型");
+    expect(wrapper.text()).toContain("新建数据集");
+    expect(wrapper.text()).toContain("新建空间");
+    expect(wrapper.text()).toContain("个人主页");
+    expect(wrapper.text()).toContain("个人设置");
+    expect(wrapper.text()).toContain("退出登录");
 
-    const buttons = wrapper.findAll("button");
-
-    await buttons
-      .find((button) => button.text().includes("New Model"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("New Organization"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("Profile"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("Settings"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("Logout"))
-      .trigger("click");
+    await findButtonByText(wrapper, "新建模型").trigger("click");
+    await findButtonByText(wrapper, "个人主页").trigger("click");
+    await findButtonByText(wrapper, "个人设置").trigger("click");
+    await findButtonByText(wrapper, "退出登录").trigger("click");
 
     expect(mocks.router.push).toHaveBeenCalledWith({
       path: "/new",
       query: { type: "model" },
     });
-    expect(mocks.router.push).toHaveBeenCalledWith("/organizations/new");
     expect(mocks.router.push).toHaveBeenCalledWith("/alice");
     expect(mocks.router.push).toHaveBeenCalledWith("/settings");
     expect(authStore.logout).toHaveBeenCalled();
@@ -156,10 +144,7 @@ describe("TheHeader", () => {
 
     const wrapper = mountHeader();
 
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Logout"))
-      .trigger("click");
+    await findButtonByText(wrapper, "退出登录").trigger("click");
     await flushPromises();
 
     expect(authStore.logout).toHaveBeenCalled();

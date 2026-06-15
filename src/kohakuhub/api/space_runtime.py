@@ -587,8 +587,12 @@ async def _start_runtime(
                     "CN_MODEL_HUB_SPACE_ID": f"{repo.namespace}/{repo.name}",
                     "CN_MODEL_HUB_SPACE_REVISION": revision,
                     "CN_MODEL_HUB_SPACE_COMMIT": commit_id,
+                    "CN_MODEL_HUB_REPO_REVISION": revision,
+                    "CN_MODEL_HUB_REPO_COMMIT": commit_id,
                     "LOCAL_MODEL_PATH": str(workdir),
                     "MLFLOW_TRACKING_URI": cfg.app.mlflow_tracking_uri,
+                    "MLFLOW_EXPERIMENT_NAME": repo.mlflow_experiment_name or "",
+                    "MLFLOW_EXPERIMENT_ID": repo.mlflow_experiment_id or "",
                     "PYTHONUNBUFFERED": "1",
                 }
             )

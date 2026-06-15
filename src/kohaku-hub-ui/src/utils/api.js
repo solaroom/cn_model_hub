@@ -656,6 +656,14 @@ export const spaceRuntimeAPI = {
 
 export const mlflowAPI = {
   status: () => api.get("/api/mlflow/status"),
+  getBinding: (repoType, namespace, name) =>
+    api.get(`/api/${repoType}s/${namespace}/${name}/mlflow`),
+  bind: (repoType, namespace, name, data = {}) =>
+    api.post(`/api/${repoType}s/${namespace}/${name}/mlflow/bind`, data),
+  unbind: (repoType, namespace, name) =>
+    api.post(`/api/${repoType}s/${namespace}/${name}/mlflow/unbind`),
+  listRuns: (repoType, namespace, name, params = {}) =>
+    api.get(`/api/${repoType}s/${namespace}/${name}/mlflow/runs`, { params }),
 };
 
 /**

@@ -101,6 +101,10 @@ describe("home page", () => {
     });
   }
 
+  function findButtonByText(wrapper, text) {
+    return wrapper.findAll("button").find((button) => button.text().includes(text));
+  }
+
   it("loads repo stats through the API client, routes hero actions, and persists sort changes", async () => {
     const wrapper = mountPage();
     await flushPromises();
@@ -132,44 +136,33 @@ describe("home page", () => {
       },
     ]);
 
-    expect(wrapper.text()).toContain("Welcome to KohakuHub");
-    expect(wrapper.text()).toContain("🔥 Trending");
+    expect(wrapper.text()).toContain("中文开源AI模型社区");
+    expect(wrapper.text()).toContain("社区精选");
     expect(wrapper.text()).toContain("mai_lin/lineart-caption-base");
     expect(wrapper.text()).toContain("mai_lin/street-sign-zh-en");
     expect(wrapper.text()).toContain("mai_lin/mai_lin");
 
-    const buttons = wrapper.findAll("button");
-    await buttons
-      .find((button) => button.text().includes("Get Started"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("Host Your Own Hub"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("View all models"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("View all datasets"))
-      .trigger("click");
-    await buttons
-      .find((button) => button.text().includes("View all spaces"))
-      .trigger("click");
+    await findButtonByText(wrapper, "浏览开源模型").trigger("click");
+    await findButtonByText(wrapper, "体验在线 Demo").trigger("click");
+    await findButtonByText(wrapper, "查看全部模型").trigger("click");
+    await findButtonByText(wrapper, "查看全部数据集").trigger("click");
+    await findButtonByText(wrapper, "查看全部空间").trigger("click");
 
     await wrapper.get('select[data-el-select="true"]').setValue("likes");
     await flushPromises();
-    expect(wrapper.text()).toContain("❤️ Most Liked");
+    expect(wrapper.text()).toContain("点赞热榜");
 
     await wrapper.get('select[data-el-select="true"]').setValue("recent");
     await flushPromises();
-    expect(wrapper.text()).toContain("🆕 Recently Created");
+    expect(wrapper.text()).toContain("最新创建");
 
     await wrapper.get('select[data-el-select="true"]').setValue("updated");
     await flushPromises();
-    expect(wrapper.text()).toContain("🕒 Recently Updated");
+    expect(wrapper.text()).toContain("最近更新");
 
     await wrapper.get('select[data-el-select="true"]').setValue("downloads");
     await flushPromises();
-    expect(wrapper.text()).toContain("⬇️ Most Downloaded");
+    expect(wrapper.text()).toContain("下载热榜");
 
     expect(mocks.repoSortPreference.setRepoSortPreference).toHaveBeenCalledWith(
       {
@@ -179,7 +172,7 @@ describe("home page", () => {
       },
     );
     expect(mocks.router.push).toHaveBeenCalledWith("/get-started");
-    expect(mocks.router.push).toHaveBeenCalledWith("/self-hosted");
+    expect(mocks.router.push).toHaveBeenCalledWith("/spaces");
     expect(mocks.router.push).toHaveBeenCalledWith("/models");
     expect(mocks.router.push).toHaveBeenCalledWith("/datasets");
     expect(mocks.router.push).toHaveBeenCalledWith("/spaces");
@@ -195,7 +188,7 @@ describe("home page", () => {
     await flushPromises();
 
     expect(mocks.router.replace).toHaveBeenCalledWith("/");
-    expect(wrapper.text()).toContain("Welcome to KohakuHub");
+    expect(wrapper.text()).toContain("中文开源AI模型社区");
   });
 
   it("handles missing users and renders fallback metrics", async () => {
@@ -253,6 +246,6 @@ describe("home page", () => {
 
     expect(mocks.elMessage.error).not.toHaveBeenCalled();
     expect(mocks.router.replace).not.toHaveBeenCalled();
-    expect(wrapper.text()).toContain("Welcome to KohakuHub");
+    expect(wrapper.text()).toContain("中文开源AI模型社区");
   });
 });

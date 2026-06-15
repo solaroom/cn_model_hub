@@ -182,6 +182,12 @@ class Repository(BaseModel):
     downloads = IntegerField(default=0)  # Total download sessions (not file count)
     likes_count = IntegerField(default=0)  # Total likes
 
+    # MLflow experiment binding (one repository -> one experiment)
+    mlflow_enabled = BooleanField(default=False)
+    mlflow_experiment_name = CharField(null=True)
+    mlflow_experiment_id = CharField(null=True)
+    mlflow_last_synced_at = DateTimeField(null=True)
+
     created_at = DateTimeField(default=partial(datetime.now, tz=timezone.utc))
 
     class Meta:

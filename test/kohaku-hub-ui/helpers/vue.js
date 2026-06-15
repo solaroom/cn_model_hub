@@ -1,4 +1,4 @@
-import { defineComponent, h } from "vue";
+﻿import { defineComponent, h } from "vue";
 
 const emitValueUpdate = (emit, value) => {
   emit("update:modelValue", value);
@@ -15,6 +15,11 @@ const passthroughDiv = (name, attrs = {}) =>
   });
 
 export const ElementPlusStubs = {
+  ElTooltip: passthroughDiv("ElTooltip", { "data-el-tooltip": "true" }),
+  ElTable: passthroughDiv("ElTable", { "data-el-table": "true" }),
+  ElTableColumn: passthroughDiv("ElTableColumn", {
+    "data-el-table-column": "true",
+  }),
   ElTag: defineComponent({
     name: "ElTag",
     props: {
@@ -157,7 +162,7 @@ export const ElementPlusStubs = {
       // tail with ellipsis). The stub renders every page number as a
       // button so a test can drive direct page-N navigation, plus a
       // jumper input when the layout asks for it. That mirrors what
-      // the real component reaches in user input — `current-change`
+      // the real component reaches in user input 鈥?`current-change`
       // fires with the new page number on either path.
       return () => {
         const total = Math.max(1, props.pageCount);

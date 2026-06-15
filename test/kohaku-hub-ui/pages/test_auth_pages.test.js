@@ -51,6 +51,10 @@ describe("auth pages", () => {
     });
   }
 
+  function findButtonByText(wrapper, text) {
+    return wrapper.findAll("button").find((button) => button.text().includes(text));
+  }
+
   it("loads site config and logs in with the return URL", async () => {
     const router = await createTestRouter(
       `/login?return=${encodeURIComponent("/models/mai_lin/lineart-caption-base")}`,
@@ -62,16 +66,10 @@ describe("auth pages", () => {
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Enter your username"]')
-      .setValue("mai_lin");
-    await wrapper
-      .find('input[placeholder="Enter your password"]')
-      .setValue("KohakuDev123!");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Login"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("mai_lin");
+    await inputs[1].setValue("KohakuDev123!");
+    await findButtonByText(wrapper, "登录").trigger("click");
     await flushPromises();
 
     expect(axios.get).toHaveBeenCalledWith("/api/site-config");
@@ -93,16 +91,10 @@ describe("auth pages", () => {
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Enter your username"]')
-      .setValue("mai_lin");
-    await wrapper
-      .find('input[placeholder="Enter your password"]')
-      .setValue("secret");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Login"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("mai_lin");
+    await inputs[1].setValue("secret");
+    await findButtonByText(wrapper, "登录").trigger("click");
     await flushPromises();
 
     expect(pushSpy).toHaveBeenCalledWith("/");
@@ -117,14 +109,10 @@ describe("auth pages", () => {
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Enter your username"]')
-      .setValue("mai_lin");
-    const passwordInput = wrapper.find(
-      'input[placeholder="Enter your password"]',
-    );
-    await passwordInput.setValue("KohakuDev123!");
-    await passwordInput.trigger("keyup.enter");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("mai_lin");
+    await inputs[1].setValue("KohakuDev123!");
+    await inputs[1].trigger("keyup.enter");
     await flushPromises();
 
     expect(authStore.login).toHaveBeenCalledWith({
@@ -143,8 +131,8 @@ describe("auth pages", () => {
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Registration is invitation-only");
-    expect(wrapper.text()).not.toContain("Sign up");
+    expect(wrapper.text()).toContain("当前仅支持邀请注册");
+    expect(wrapper.text()).not.toContain("去注册");
   });
 
   it("keeps working when the login page config or submit flow fails", async () => {
@@ -157,16 +145,10 @@ describe("auth pages", () => {
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Enter your username"]')
-      .setValue("mai_lin");
-    await wrapper
-      .find('input[placeholder="Enter your password"]')
-      .setValue("secret");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Login"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("mai_lin");
+    await inputs[1].setValue("secret");
+    await findButtonByText(wrapper, "登录").trigger("click");
     await flushPromises();
 
     expect(pushSpy).not.toHaveBeenCalled();
@@ -182,10 +164,7 @@ describe("auth pages", () => {
     });
     await flushPromises();
 
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Login"))
-      .trigger("click");
+    await findButtonByText(wrapper, "登录").trigger("click");
     await flushPromises();
 
     expect(authStore.login).not.toHaveBeenCalled();
@@ -205,16 +184,11 @@ describe("auth pages", () => {
 
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
-    await wrapper
-      .find('input[placeholder="Enter your username"]')
-      .setValue("mai_lin");
-    await wrapper
-      .find('input[placeholder="Enter your password"]')
-      .setValue("secret");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Login"))
-      .trigger("click");
+
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("mai_lin");
+    await inputs[1].setValue("secret");
+    await findButtonByText(wrapper, "登录").trigger("click");
     await flushPromises();
 
     expect(pushSpy).not.toHaveBeenCalledWith("/");
@@ -232,8 +206,8 @@ describe("auth pages", () => {
     const wrapper = mountPage(LoginPage, router);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Registration is invitation-only");
-    expect(wrapper.text()).not.toContain("Sign up");
+    expect(wrapper.text()).toContain("当前仅支持邀请注册");
+    expect(wrapper.text()).not.toContain("去注册");
   });
 
   it("blocks registration without an invitation and routes visitors to login", async () => {
@@ -246,12 +220,8 @@ describe("auth pages", () => {
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Registration is Invitation-Only");
-
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Go to Login"))
-      .trigger("click");
+    expect(wrapper.text()).toContain("仅支持邀请注册");
+    await findButtonByText(wrapper, "前往登录").trigger("click");
 
     expect(pushSpy).toHaveBeenCalledWith("/login");
   });
@@ -271,19 +241,11 @@ describe("auth pages", () => {
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("ivy_ops");
-    await wrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("ivy@example.com");
-    await wrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("ivy_ops");
+    await inputs[1].setValue("ivy@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(wrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(authStore.register).toHaveBeenCalledWith({
@@ -314,19 +276,11 @@ describe("auth pages", () => {
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("ivy_ops");
-    await wrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("ivy@example.com");
-    await wrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("ivy_ops");
+    await inputs[1].setValue("ivy@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(wrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(authStore.register).toHaveBeenCalledWith({
@@ -350,19 +304,11 @@ describe("auth pages", () => {
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("noah_kim");
-    await wrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("noah@example.com");
-    await wrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("noah_kim");
+    await inputs[1].setValue("noah@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(wrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(pushSpy).toHaveBeenCalledWith("/login");
@@ -381,19 +327,11 @@ describe("auth pages", () => {
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("ivy_ops");
-    await wrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("ivy@example.com");
-    await wrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("ivy_ops");
+    await inputs[1].setValue("ivy@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(wrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(pushSpy).toHaveBeenCalledWith("/");
@@ -409,19 +347,11 @@ describe("auth pages", () => {
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
 
-    await wrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("noah_kim");
-    await wrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("noah@example.com");
-    await wrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("noah_kim");
+    await inputs[1].setValue("noah@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(wrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(pushSpy).not.toHaveBeenCalledWith("/");
@@ -439,28 +369,17 @@ describe("auth pages", () => {
       ElForm: InvalidElFormStub,
     });
     await flushPromises();
-    await invalidWrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    await findButtonByText(invalidWrapper, "注册").trigger("click");
     await flushPromises();
     expect(authStore.register).not.toHaveBeenCalled();
 
     const validWrapper = mountPage(RegisterPage, router);
     await flushPromises();
-    await validWrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("ivy_ops");
-    await validWrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("ivy@example.com");
-    await validWrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await validWrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = validWrapper.findAll("input");
+    await inputs[0].setValue("ivy_ops");
+    await inputs[1].setValue("ivy@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(validWrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(authStore.register).toHaveBeenCalled();
@@ -480,19 +399,11 @@ describe("auth pages", () => {
 
     const wrapper = mountPage(RegisterPage, router);
     await flushPromises();
-    await wrapper
-      .find('input[placeholder="Choose a username"]')
-      .setValue("ivy_ops");
-    await wrapper
-      .find('input[placeholder="your@email.com"]')
-      .setValue("ivy@example.com");
-    await wrapper
-      .find('input[placeholder="Create a password"]')
-      .setValue("securepass");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Sign Up"))
-      .trigger("click");
+    const inputs = wrapper.findAll("input");
+    await inputs[0].setValue("ivy_ops");
+    await inputs[1].setValue("ivy@example.com");
+    await inputs[2].setValue("securepass");
+    await findButtonByText(wrapper, "注册").trigger("click");
     await flushPromises();
 
     expect(pushSpy).not.toHaveBeenCalledWith("/");

@@ -59,8 +59,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: [`${testRoot}/setup/vitest.setup.js`],
-    include: [`${testRoot}/**/*.test.{js,ts}`],
+    setupFiles: [resolve(testRoot, "setup", "vitest.setup.js")],
+    include: ["../../test/kohaku-hub-ui/**/*.test.{js,ts}"],
     css: false,
     coverage: {
       provider: "v8",

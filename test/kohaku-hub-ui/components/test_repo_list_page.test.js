@@ -1,6 +1,5 @@
 import { flushPromises, mount } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { http } from "@/testing/msw";
 import {
@@ -55,6 +54,7 @@ describe("RepoListPage", () => {
   const requests = {
     create: [],
     listRepos: [],
+    search: [],
     userOrgs: [],
   };
 
@@ -77,9 +77,11 @@ describe("RepoListPage", () => {
     createResponse = cloneFixture(uiApiFixtures.repo.create),
     userOrgsStatus = 200,
     userOrgsResponse = cloneFixture(uiApiFixtures.organizations.userOrgs),
+    searchResponse = null,
   } = {}) {
     requests.create.length = 0;
     requests.listRepos.length = 0;
+    requests.search.length = 0;
     requests.userOrgs.length = 0;
 
     server.use(
@@ -107,6 +109,23 @@ describe("RepoListPage", () => {
         });
         return jsonResponse(spaceRepos);
       }),
+      http.get("/api/search", ({ request }) => {
+        const url = new URL(request.url);
+        const params = Object.fromEntries(url.searchParams.entries());
+        requests.search.push(params);
+        if (searchResponse) {
+          return jsonResponse(searchResponse);
+        }
+        const query = String(params.q || "").toLowerCase();
+        const repositories = modelRepos.filter((repo) => {
+          if (!query) return true;
+          return (
+            String(repo.id || "").toLowerCase().includes(query) ||
+            String(repo.author || "").toLowerCase().includes(query)
+          );
+        });
+        return jsonResponse({ repositories });
+      }),
       http.get("/org/users/:username/orgs", ({ request, params }) => {
         const url = new URL(request.url);
         requests.userOrgs.push({
@@ -124,9 +143,14 @@ describe("RepoListPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
     setActivePinia(createPinia());
     mocks.repoSortPreference.getRepoSortPreference.mockReturnValue("likes");
     installHandlers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   function mountPage(repoType = "model", extraStubs = {}) {
@@ -142,6 +166,10 @@ describe("RepoListPage", () => {
         },
       },
     });
+  }
+
+  function findButtonByText(wrapper, text) {
+    return wrapper.findAll("button").find((button) => button.text().includes(text));
   }
 
   it("loads repos through the API client, filters them, persists sort preference, and creates a new repo", async () => {
@@ -165,10 +193,20 @@ describe("RepoListPage", () => {
     ]);
     expect(wrapper.text()).toContain("mai_lin/lineart-caption-base");
     expect(wrapper.text()).toContain("alice/other-model");
-    expect(wrapper.text()).toContain("New Model");
+    expect(wrapper.text()).toContain("新建模型");
 
-    const searchInput = wrapper.get('input[placeholder="Search models..."]');
+    const searchInput = wrapper.get('input[placeholder="搜索模型..."]');
     await searchInput.setValue("other");
+    await vi.advanceTimersByTimeAsync(350);
+    await flushPromises();
+
+    expect(requests.search.at(-1)).toEqual({
+      q: "other",
+      repo_type: "model",
+      sort: "likes",
+      limit: "100",
+      include_users: "false",
+    });
     expect(wrapper.text()).toContain("alice/other-model");
     expect(wrapper.text()).not.toContain("mai_lin/lineart-caption-base");
 
@@ -183,35 +221,23 @@ describe("RepoListPage", () => {
         value: "recent",
       },
     );
-    expect(requests.listRepos.at(-1)).toEqual({
-      type: "model",
-      params: {
-        limit: "100",
-        sort: "recent",
-        fallback: "false",
-      },
+    expect(requests.search.at(-1)).toEqual({
+      q: "other",
+      repo_type: "model",
+      sort: "recent",
+      limit: "100",
+      include_users: "false",
     });
 
-    const createButton = wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("New Model"));
-    await createButton.trigger("click");
+    await findButtonByText(wrapper, "新建模型").trigger("click");
     await flushPromises();
 
-    expect(wrapper.find('[data-el-dialog="Create New Model"]').exists()).toBe(
-      true,
-    );
+    expect(wrapper.find('[data-el-dialog="新建模型"]').exists()).toBe(true);
 
     await wrapper.get('input[placeholder="my-model"]').setValue("fresh-model");
-    await wrapper
-      .get('select[aria-label="Select organization or leave empty"]')
-      .setValue("acme");
+    await wrapper.get('select[aria-label="选择组织或留空"]').setValue("acme");
     await wrapper.get('input[type="checkbox"]').setValue(true);
-
-    const createDialogButton = wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"));
-    await createDialogButton.trigger("click");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(requests.userOrgs).toEqual([
@@ -240,7 +266,7 @@ describe("RepoListPage", () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain("New Model");
+    expect(wrapper.text()).not.toContain("新建模型");
   });
 
   it("falls back to the current user when the backend omits repo_id", async () => {
@@ -255,17 +281,11 @@ describe("RepoListPage", () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    const createButton = wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("New Model"));
-    await createButton.trigger("click");
+    await findButtonByText(wrapper, "新建模型").trigger("click");
     await flushPromises();
 
     await wrapper.get('input[placeholder="my-model"]').setValue("fresh-model");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(requests.create).toEqual([
@@ -300,9 +320,9 @@ describe("RepoListPage", () => {
         },
       },
     ]);
-    expect(wrapper.text()).toContain("Spaces");
-    expect(wrapper.text()).toContain("Discover ML demos and applications");
-    expect(wrapper.text()).toContain("New Space");
+    expect(wrapper.text()).toContain("空间");
+    expect(wrapper.text()).toContain("浏览模型演示与应用空间");
+    expect(wrapper.text()).toContain("新建空间");
   });
 
   it("filters by author and reports organization or creation failures", async () => {
@@ -314,6 +334,15 @@ describe("RepoListPage", () => {
           author: "alice",
         },
       ],
+      searchResponse: {
+        repositories: [
+          {
+            ...cloneFixture(uiApiFixtures.repo.info),
+            id: "team/project",
+            author: "alice",
+          },
+        ],
+      },
       userOrgsStatus: 500,
       userOrgsResponse: {},
       createStatus: 500,
@@ -328,15 +357,20 @@ describe("RepoListPage", () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    await wrapper
-      .get('input[placeholder="Search models..."]')
-      .setValue("alice");
+    await wrapper.get('input[placeholder="搜索模型..."]').setValue("alice");
+    await vi.advanceTimersByTimeAsync(350);
+    await flushPromises();
+
+    expect(requests.search.at(-1)).toEqual({
+      q: "alice",
+      repo_type: "model",
+      sort: "likes",
+      limit: "100",
+      include_users: "false",
+    });
     expect(wrapper.text()).toContain("team/project");
 
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("New Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "新建模型").trigger("click");
     await flushPromises();
 
     expect(requests.userOrgs).toEqual([
@@ -347,10 +381,7 @@ describe("RepoListPage", () => {
     ]);
 
     await wrapper.get('input[placeholder="my-model"]').setValue("broken-model");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(requests.create).toEqual([
@@ -367,10 +398,6 @@ describe("RepoListPage", () => {
   });
 
   it("surfaces the backend 409 conflict message when the repo already exists", async () => {
-    // Backend PR #18 changed the exist-ok path from 400 `{detail}` to 409
-    // `{url, repo_id, error}`. RepoListPage's inline "New Model" dialog
-    // uses the same create call as the standalone /new page; pin the
-    // same error-surfacing contract here so the two paths stay aligned.
     installHandlers({
       createStatus: 409,
       createResponse: {
@@ -387,17 +414,11 @@ describe("RepoListPage", () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("New Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "新建模型").trigger("click");
     await flushPromises();
 
     await wrapper.get('input[placeholder="my-model"]').setValue("fresh-model");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(mocks.elMessage.error).toHaveBeenCalledWith(
@@ -423,16 +444,9 @@ describe("RepoListPage", () => {
     });
     await flushPromises();
 
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("New Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "新建模型").trigger("click");
     await flushPromises();
-
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(requests.userOrgs).toEqual([

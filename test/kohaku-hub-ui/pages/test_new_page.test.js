@@ -77,6 +77,10 @@ describe("new repository page", () => {
     });
   }
 
+  function findButtonByText(wrapper, text) {
+    return wrapper.findAll("button").find((button) => button.text().includes(text));
+  }
+
   it("creates repositories for organizations through the API client and navigates to the new repo", async () => {
     const router = await createTestRouter("/new?type=dataset");
     const pushSpy = vi.spyOn(router, "push");
@@ -86,13 +90,8 @@ describe("new repository page", () => {
 
     const wrapper = mountPage(router);
     await wrapper.find('select[data-el-select="true"]').setValue("aurora-labs");
-    await wrapper
-      .find('input[placeholder="my-awesome-dataset"]')
-      .setValue("vision-set");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Dataset"))
-      .trigger("click");
+    await wrapper.find('input[placeholder="my-awesome-dataset"]').setValue("vision-set");
+    await findButtonByText(wrapper, "创建数据集").trigger("click");
     await flushPromises();
 
     expect(createRequests).toEqual([
@@ -121,13 +120,8 @@ describe("new repository page", () => {
     authStore.userOrganizations = [];
 
     const wrapper = mountPage(router);
-    await wrapper
-      .find('input[placeholder="my-awesome-space"]')
-      .setValue("my-demo");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Space"))
-      .trigger("click");
+    await wrapper.find('input[placeholder="my-awesome-space"]').setValue("my-demo");
+    await findButtonByText(wrapper, "创建空间").trigger("click");
     await flushPromises();
 
     expect(createRequests).toEqual([
@@ -153,13 +147,8 @@ describe("new repository page", () => {
     authStore.userOrganizations = [];
 
     const wrapper = mountPage(router);
-    await wrapper
-      .find('input[placeholder="my-awesome-model"]')
-      .setValue("fresh-model");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await wrapper.find('input[placeholder="my-awesome-model"]').setValue("fresh-model");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(createRequests).toEqual([
@@ -178,20 +167,16 @@ describe("new repository page", () => {
     const wrapper = mountPage(router);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Create Repository");
-    expect(wrapper.text()).toContain("A repository contains all project files");
+    expect(wrapper.text()).toContain("新建仓库");
+    expect(wrapper.text()).toContain("仓库用于存放项目文件");
 
     await router.push("/new?type=space");
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Create Space");
+    expect(wrapper.text()).toContain("创建空间");
   });
 
   it("surfaces the backend 409 conflict message when the repo already exists", async () => {
-    // Backend PR #18 changed the exist-ok path from 400 `{detail}` to 409
-    // `{url, repo_id, error}`. The UI must pick up the top-level `error`
-    // field so users see "Repository X already exists" instead of a
-    // generic "Failed to create ..." toast.
     installHandlers({
       createStatus: 409,
       createResponse: {
@@ -208,13 +193,8 @@ describe("new repository page", () => {
     authStore.userOrganizations = [];
 
     const wrapper = mountPage(router);
-    await wrapper
-      .find('input[placeholder="my-awesome-model"]')
-      .setValue("fresh-model");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await wrapper.find('input[placeholder="my-awesome-model"]').setValue("fresh-model");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(mocks.elMessage.error).toHaveBeenCalledWith(
@@ -224,9 +204,6 @@ describe("new repository page", () => {
   });
 
   it("falls back to legacy detail-shaped error bodies", async () => {
-    // Older / non-HF-compat paths still use FastAPI's HTTPException body
-    // (`{detail: "..."}`). The UI must keep honoring that shape so the
-    // 409 fix in the previous test does not regress the legacy path.
     installHandlers({
       createStatus: 400,
       createResponse: {
@@ -240,13 +217,8 @@ describe("new repository page", () => {
     authStore.userOrganizations = [];
 
     const wrapper = mountPage(router);
-    await wrapper
-      .find('input[placeholder="my-awesome-model"]')
-      .setValue("bad-name");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await wrapper.find('input[placeholder="my-awesome-model"]').setValue("bad-name");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(mocks.elMessage.error).toHaveBeenCalledWith("Invalid repository name");
@@ -269,21 +241,13 @@ describe("new repository page", () => {
       ElForm: InvalidElFormStub,
     });
     await flushPromises();
-    await invalidWrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await findButtonByText(invalidWrapper, "创建模型").trigger("click");
     await flushPromises();
     expect(createRequests).toEqual([]);
 
     const wrapper = mountPage(router);
-    await wrapper
-      .find('input[placeholder="my-awesome-model"]')
-      .setValue("fresh-model");
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Create Model"))
-      .trigger("click");
+    await wrapper.find('input[placeholder="my-awesome-model"]').setValue("fresh-model");
+    await findButtonByText(wrapper, "创建模型").trigger("click");
     await flushPromises();
 
     expect(createRequests).toEqual([

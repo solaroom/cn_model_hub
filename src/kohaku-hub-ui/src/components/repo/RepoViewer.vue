@@ -946,6 +946,15 @@
             </div>
           </div>
         </div>
+        <RepoMlflowPanel
+          v-if="repoInfo?.mlflow && !isExternalRepo"
+          :repo-type="repoType"
+          :namespace="namespace"
+          :name="name"
+          :is-owner="isOwner"
+          :initial-binding="repoInfo.mlflow"
+          @binding-updated="handleMlflowBindingUpdated"
+        />
       </aside>
     </div>
 
@@ -1077,6 +1086,7 @@ import ReferencedDatasetsCard from "@/components/repo/metadata/ReferencedDataset
 import SidebarRelationshipsCard from "@/components/repo/metadata/SidebarRelationshipsCard.vue";
 import DatasetViewerTab from "@/components/repo/DatasetViewerTab.vue";
 import SpaceRuntimePanel from "@/components/repo/SpaceRuntimePanel.vue";
+import RepoMlflowPanel from "@/components/repo/RepoMlflowPanel.vue";
 import ErrorState from "@/components/common/ErrorState.vue";
 import FilePreviewDialog from "@/components/repo/preview/FilePreviewDialog.vue";
 import TarBrowserDialog from "@/components/repo/preview/TarBrowserDialog.vue";
@@ -1488,6 +1498,14 @@ async function loadRepoInfo() {
   } finally {
     loading.value = false;
   }
+}
+
+function handleMlflowBindingUpdated(binding) {
+  if (!repoInfo.value) return;
+  repoInfo.value = {
+    ...repoInfo.value,
+    mlflow: binding,
+  };
 }
 
 async function toggleLike() {

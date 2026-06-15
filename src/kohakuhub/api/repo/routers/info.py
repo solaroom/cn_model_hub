@@ -304,6 +304,14 @@ async def get_repo_info(
         "spaces": [],
         "models": [],
         "datasets": [],
+        "mlflow": {
+            "enabled": repo_row.mlflow_enabled,
+            "experiment_name": repo_row.mlflow_experiment_name,
+            "experiment_id": repo_row.mlflow_experiment_id,
+            "last_synced_at": safe_strftime(
+                repo_row.mlflow_last_synced_at, DATETIME_FORMAT_ISO
+            ),
+        },
     }
 
     # Add storage info if available

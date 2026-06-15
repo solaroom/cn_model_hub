@@ -92,6 +92,7 @@ describe("RepoViewer path handling", () => {
           ReferencedDatasetsCard: true,
           SidebarRelationshipsCard: true,
           DatasetViewerTab: true,
+          RepoMlflowPanel: true,
         },
       },
     });
@@ -330,7 +331,7 @@ describe("RepoViewer path handling", () => {
     // browser context menu offer "Open link in new tab".
     for (const link of rowLinks) {
       expect(link.element.tagName).toBe("A");
-      expect(link.attributes("aria-label")).toMatch(/^Open /);
+      expect(link.attributes("aria-label")).toMatch(/^打开 /);
     }
 
     // The preview button and commit-row RouterLink must NOT trigger a
@@ -338,7 +339,7 @@ describe("RepoViewer path handling", () => {
     // swallowed by @click.stop and their z-index keeps them on top.
     const previewBtn = wrapper
       .findAll("button")
-      .find((b) => (b.attributes("aria-label") || "").startsWith("Preview"));
+      .find((b) => (b.attributes("aria-label") || "").startsWith("预览"));
     if (previewBtn) {
       await previewBtn.trigger("click");
       // click on the preview button should NOT have navigated via router.push
@@ -368,7 +369,7 @@ describe("RepoViewer path handling", () => {
     await flushPromises();
     await flushPromises();
 
-    expect(emptyWrapper.text()).toContain("No files found");
+    expect(emptyWrapper.text()).toContain("未找到文件");
     expect(requests.pathsInfo).toEqual([]);
 
     const failedWrapper = mountViewer({ currentPath: "catalog-next" });
@@ -638,7 +639,7 @@ describe("RepoViewer path handling", () => {
     );
     // Count copy carries the "loaded" suffix while more is available.
     expect(wrapper.find('[data-testid="file-list-count"]').text()).toContain(
-      "loaded",
+      "已加载",
     );
 
     wrapper.unmount();
@@ -932,7 +933,7 @@ describe("RepoViewer path handling", () => {
     // unfiltered slice) cannot leak into the filtered listing.
     expect(prefixedReq.cursor).toBeUndefined();
     expect(wrapper.text()).toContain(
-      'No files in this directory start with "zeta"',
+      '当前目录没有以“zeta”开头的文件',
     );
 
     wrapper.unmount();
@@ -1170,18 +1171,18 @@ describe("RepoViewer path handling", () => {
     // The confirmed tar gets the indexed-tar icon (Carbon's archive),
     // the unconfirmed one stays bare.
     const previewButtons = wrapper.findAll(
-      "button[aria-label^='Preview metadata for'], button[aria-label^='Preview metadata for ']",
+      "button[aria-label^='预览 '], button[aria-label^='预览']",
     );
     // ElButton stubs render as <button>; iterate all of them and
     // collect the ones the icon predicate says are previewable.
     const allButtons = wrapper.findAll("button");
     const tarPreviewButtons = allButtons.filter((b) =>
-      (b.attributes("aria-label") || "").startsWith("Preview metadata for"),
+      (b.attributes("aria-label") || "").startsWith("预览 "),
     );
     const titles = tarPreviewButtons.map((b) => b.attributes("title") || "");
     // One previewable .tar row only — the confirmed one.
     expect(tarPreviewButtons).toHaveLength(1);
-    expect(titles[0]).toContain("Browse indexed tar contents");
+    expect(titles[0]).toContain("浏览已索引 tar 内容");
     // unused alias kept to silence the linter when the future patch
     // adds a second selector — drop on the next touch.
     void previewButtons;
@@ -1232,11 +1233,11 @@ describe("RepoViewer path handling", () => {
     const previewBtn = wrapper
       .findAll("button")
       .find((b) =>
-        (b.attributes("aria-label") || "").startsWith("Preview metadata for bundle.tar"),
+        (b.attributes("aria-label") || "").startsWith("预览 bundle.tar"),
       );
     expect(previewBtn).toBeTruthy();
     expect(previewBtn.attributes("title")).toContain(
-      "Browse indexed tar contents",
+      "浏览已索引 tar 内容",
     );
 
     wrapper.unmount();

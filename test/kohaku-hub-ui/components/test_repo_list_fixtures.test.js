@@ -36,7 +36,7 @@ describe("RepoList captured backend fixtures", () => {
     const wrapper = mountRepoList([repoInfo], "model");
 
     expect(wrapper.text()).toContain("mai_lin/lineart-caption-base");
-    expect(wrapper.text()).toContain("by mai_lin");
+    expect(wrapper.text()).toContain("作者 mai_lin");
     expect(wrapper.text()).toContain(String(repoStats.downloads));
     expect(wrapper.text()).toContain(String(repoStats.likes));
 
@@ -75,11 +75,11 @@ describe("RepoList captured backend fixtures", () => {
       "model",
     );
 
-    expect(privateWrapper.text()).toContain("Private");
-    expect(privateWrapper.text()).not.toContain("Updated");
+    expect(privateWrapper.text()).toContain("私有");
+    expect(privateWrapper.text()).not.toContain("更新于");
 
     const emptyWrapper = mountRepoList([], "model");
-    expect(emptyWrapper.text()).toContain("No repositories found");
+    expect(emptyWrapper.text()).toContain("暂无匹配的仓库");
   });
 
   it("renders updated timestamps and tag previews", () => {
@@ -95,7 +95,7 @@ describe("RepoList captured backend fixtures", () => {
       "model",
     );
 
-    expect(wrapper.text()).toContain("Updated");
+    expect(wrapper.text()).toContain("更新于");
     expect(wrapper.text()).toContain("vision");
     expect(wrapper.text()).toContain("captioning");
     expect(wrapper.text()).toContain("english");

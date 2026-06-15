@@ -1,17 +1,3 @@
-// Component test for the standalone blob page's indexed-tar
-// detection.
-//
-// Two contracts being pinned:
-//   1. repoType is derived from the FIRST URL segment, not from
-//      "/models/" / "/datasets/" / "/spaces/" appearing anywhere in
-//      the path. The earlier substring check mis-classified dataset
-//      members at paths like `archives/models/bundle.tar` as
-//      `model` repos and routed the resolve URL to `/api/models/...`
-//      which 404'd.
-//   2. When a `.tar` blob has a sibling `<basename>.json` in the same
-//      folder, the page renders <TarBrowserPanel> inline in place of
-//      the binary fallback. Bare tars stay on the existing fallback.
-
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -29,6 +15,7 @@ const mocks = vi.hoisted(() => ({
     query: {},
   },
   listTreeImpl: vi.fn(),
+  fileExistsImpl: vi.fn(),
 }));
 
 vi.mock("vue-router/auto", () => ({
@@ -39,6 +26,7 @@ vi.mock("vue-router/auto", () => ({
 vi.mock("@/utils/api", () => ({
   repoAPI: {
     listTree: (...args) => mocks.listTreeImpl(...args),
+    fileExists: (...args) => mocks.fileExistsImpl(...args),
     commitFiles: vi.fn(),
   },
 }));
@@ -62,9 +50,6 @@ vi.mock("@/utils/http-errors", () => ({
   ERROR_KIND: { NOT_FOUND: "not-found", UPSTREAM_UNAVAILABLE: "upstream-unavailable" },
 }));
 
-// The page's TarBrowserPanel mount is the surface we want to assert.
-// Stub it as a presence-detector that surfaces forwarded props as
-// data attributes.
 vi.mock("@/components/repo/preview/TarBrowserPanel.vue", () => ({
   default: {
     name: "TarBrowserPanel",
@@ -74,8 +59,6 @@ vi.mock("@/components/repo/preview/TarBrowserPanel.vue", () => ({
   },
 }));
 
-// Make the body-fetch path inert so the test doesn't loop on
-// retries while the indexed-tar detection runs in parallel.
 const fetchMock = vi.fn(async () =>
   new Response(new Uint8Array([0x00, 0x01]), {
     status: 200,
@@ -102,6 +85,10 @@ function mountBlob() {
 beforeEach(() => {
   vi.clearAllMocks();
   globalThis.fetch = fetchMock;
+  mocks.fileExistsImpl.mockImplementation(async (...args) => {
+    const path = args.at(-1);
+    return String(path || "").endsWith("bundle.json");
+  });
 });
 
 describe("blob page · repoType derivation", () => {
@@ -114,14 +101,10 @@ describe("blob page · repoType derivation", () => {
       branch: "main",
       file: "archives/models/bundle.tar",
     };
-    // No sibling — the listTree call should still happen but return
-    // only the .tar entry, and the page should fall through to the
-    // binary fallback. The crucial assertion is the listTree call's
-    // first argument (repo type) — it must be "dataset", not "model".
     mocks.listTreeImpl.mockResolvedValue({
       data: [{ type: "file", path: "archives/models/bundle.tar", size: 1 }],
     });
-    const wrapper = mountBlob();
+    mountBlob();
     await flushPromises();
     const calls = mocks.listTreeImpl.mock.calls;
     expect(calls.length).toBeGreaterThanOrEqual(1);
@@ -137,7 +120,7 @@ describe("blob page · repoType derivation", () => {
       file: "archives/some.tar",
     };
     mocks.listTreeImpl.mockResolvedValue({ data: [] });
-    const wrapper = mountBlob();
+    mountBlob();
     await flushPromises();
     const calls = mocks.listTreeImpl.mock.calls;
     expect(calls.length).toBeGreaterThanOrEqual(1);
@@ -185,7 +168,6 @@ describe("blob page · indexed-tar inline detection", () => {
     await flushPromises();
     const panel = wrapper.find('[data-stub="TarBrowserPanel"]');
     expect(panel.exists()).toBe(true);
-    // The tarUrl + indexUrl point at the matched pair.
     expect(panel.attributes("data-tar-url")).toContain(
       "archives/models/bundle.tar",
     );
@@ -205,6 +187,7 @@ describe("blob page · indexed-tar inline detection", () => {
       branch: "main",
       file: "lonely.tar",
     };
+    mocks.fileExistsImpl.mockResolvedValue(false);
     mocks.listTreeImpl.mockResolvedValue({
       data: [
         { type: "file", path: "lonely.tar", size: 1024 },
@@ -239,12 +222,10 @@ describe("blob page · indexed-tar inline detection", () => {
       branch: "main",
       file: "archives/x.tar",
     };
+    mocks.fileExistsImpl.mockRejectedValue(new Error("network down"));
     mocks.listTreeImpl.mockRejectedValue(new Error("network down"));
     const wrapper = mountBlob();
     await flushPromises();
-    // Detection failure must not flip isIndexedTar — the panel
-    // should NOT mount; the page renders the regular binary
-    // fallback instead.
     expect(wrapper.find('[data-stub="TarBrowserPanel"]').exists()).toBe(false);
   });
 });
