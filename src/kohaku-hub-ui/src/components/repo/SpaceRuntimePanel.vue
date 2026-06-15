@@ -71,11 +71,29 @@
     </div>
 
     <div v-if="runtime.logs?.length" class="card">
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="font-semibold">运行日志</h3>
-        <el-tag size="small" effect="plain">{{ runtime.logs.length }} 行</el-tag>
+      <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-semibold">运行日志</h3>
+          <el-tag size="small" effect="plain">{{ runtime.logs.length }} 行</el-tag>
+          <el-tag v-if="runtime.log_limit" size="small" effect="plain">
+            最多保留 {{ runtime.log_limit }} 行
+          </el-tag>
+        </div>
+        <div class="flex items-center gap-2">
+          <el-button size="small" plain @click="copyLogs">
+            <div class="i-carbon-copy mr-1 inline-block" />
+            复制
+          </el-button>
+          <el-button size="small" plain @click="refresh">
+            <div class="i-carbon-renew mr-1 inline-block" />
+            刷新日志
+          </el-button>
+        </div>
       </div>
-      <pre class="max-h-80 overflow-auto rounded bg-gray-950 p-4 text-xs leading-5 text-gray-100">{{ runtime.logs.join("\n") }}</pre>
+      <pre
+        ref="logRef"
+        class="max-h-[70vh] min-h-[24rem] overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950 p-4 font-mono text-xs leading-5 text-gray-100"
+      >{{ logText }}</pre>
     </div>
   </div>
 </template>
@@ -95,6 +113,8 @@ const props = defineProps({
 const loading = ref(false);
 const starting = ref(false);
 const stopping = ref(false);
+const logRef = ref(null);
+let refreshTimer = null;
 const runtime = ref({
   status: "stopped",
   message: "",
@@ -139,6 +159,39 @@ const visitorEmptyText = computed(() =>
     : "Space 还没有启动，请仓库维护者先启动应用。",
 );
 
+const logText = computed(() => (runtime.value.logs || []).join("\n"));
+
+const shouldPollRuntime = computed(() =>
+  ["starting", "running"].includes(runtime.value.status),
+);
+
+async function copyLogs() {
+  try {
+    await navigator.clipboard.writeText(logText.value);
+    ElMessage.success("日志已复制");
+  } catch (err) {
+    console.error("Failed to copy runtime logs:", err);
+    ElMessage.error("复制日志失败");
+  }
+}
+
+function scrollLogsToBottom() {
+  nextTick(() => {
+    if (!logRef.value) return;
+    logRef.value.scrollTop = logRef.value.scrollHeight;
+  });
+}
+
+function updatePolling() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+  if (shouldPollRuntime.value) {
+    refreshTimer = setInterval(refresh, 3000);
+  }
+}
+
 async function refresh() {
   loading.value = true;
   try {
@@ -148,11 +201,13 @@ async function refresh() {
     ]);
     runtime.value = runtimeData;
     mlflow.value = mlflowData;
+    scrollLogsToBottom();
   } catch (err) {
     console.error("Failed to load runtime status:", err);
     ElMessage.error(err.response?.data?.detail?.error || "加载运行状态失败");
   } finally {
     loading.value = false;
+    updatePolling();
   }
 }
 
@@ -168,6 +223,7 @@ async function startRuntime() {
       },
     );
     runtime.value = data;
+    scrollLogsToBottom();
     if (data.status === "running") {
       ElMessage.success("运行时已启动");
     } else if (data.status === "starting") {
@@ -181,6 +237,7 @@ async function startRuntime() {
     await refresh();
   } finally {
     starting.value = false;
+    updatePolling();
   }
 }
 
@@ -194,13 +251,18 @@ async function stopRuntime() {
     );
     runtime.value = data;
     ElMessage.success("运行时已停止");
+    scrollLogsToBottom();
   } catch (err) {
     console.error("Failed to stop runtime:", err);
     ElMessage.error(err.response?.data?.detail?.error || "停止运行时失败");
   } finally {
     stopping.value = false;
+    updatePolling();
   }
 }
 
 onMounted(refresh);
+onBeforeUnmount(() => {
+  if (refreshTimer) clearInterval(refreshTimer);
+});
 </script>
