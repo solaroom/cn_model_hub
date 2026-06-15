@@ -519,6 +519,7 @@ def load_config_file(config_path: Path) -> dict:
         config["s3_secret_key"] = s3.get(
             "secret_key", fallback=generate_secret(48)
         )  # 64 chars
+        config["s3_bucket"] = s3.get("bucket", fallback="hub-storage")
         config["s3_region"] = s3.get("region", fallback=default_region)
         config["s3_signature_version"] = s3.get(
             "signature_version", fallback=default_sig_version
@@ -529,6 +530,7 @@ def load_config_file(config_path: Path) -> dict:
         config["s3_endpoint"] = "http://garage:3900"
         config["s3_access_key"] = generate_secret(24)  # 32 chars
         config["s3_secret_key"] = generate_secret(48)  # 64 chars
+        config["s3_bucket"] = "hub-storage"
         config["s3_region"] = "garage"
         config["s3_signature_version"] = "s3v4"  # Garage requires s3v4
 

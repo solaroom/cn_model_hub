@@ -5,6 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import boto3
+from botocore.exceptions import ClientError
 from botocore.config import Config as BotoConfig
 
 from kohakuhub.async_utils import run_in_s3_executor
@@ -175,9 +176,15 @@ def init_storage():
                     s3.create_bucket(Bucket=bucket_name)
 
                 logger.success(f"S3 Bucket '{bucket_name}' created successfully.")
+            except ClientError as e:
+                create_error_code = e.response["Error"].get("Code")
+                if create_error_code in ("BucketAlreadyOwnedByYou", "BucketAlreadyExists"):
+                    logger.success(f"S3 Bucket '{bucket_name}' already exists.")
+                else:
+                    logger.exception(f"Failed to create S3 bucket '{bucket_name}'", e)
+                    raise
             except Exception as e:
                 logger.exception(f"Failed to create S3 bucket '{bucket_name}'", e)
-                # You might want to raise this error to halt startup
                 raise
         else:
             # Other error (e.g., 403 Forbidden)
