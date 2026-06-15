@@ -68,6 +68,7 @@ declare module 'vue' {
     RelationshipsCard: typeof import('./components/repo/metadata/RelationshipsCard.vue')['default']
     RepoList: typeof import('./components/repo/RepoList.vue')['default']
     RepoListPage: typeof import('./components/pages/RepoListPage.vue')['default']
+    RepoMlflowPanel: typeof import('./components/repo/RepoMlflowPanel.vue')['default']
     RepoViewer: typeof import('./components/repo/RepoViewer.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
