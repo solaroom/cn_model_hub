@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NETWORK_NAME="kohakuhub-dev"
+NETWORK_NAME="cn_model_hub-dev"
 CONTAINERS=(
-  "kohakuhub-dev-lakefs"
-  "kohakuhub-dev-minio"
-  "kohakuhub-dev-postgres"
-  "kohakuhub-dev-valkey"
+  "cn_model_hub-dev-lakefs"
+  "cn_model_hub-dev-minio"
+  "cn_model_hub-dev-postgres"
+  "cn_model_hub-dev-valkey"
 )
 
 container_exists() {

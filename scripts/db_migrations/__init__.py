@@ -1,1 +1,1 @@
-"""Database migrations for KohakuHub."""
+"""Database migrations for cn_model_hub."""

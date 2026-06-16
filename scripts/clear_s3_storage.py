@@ -246,7 +246,7 @@ Examples:
   export S3_BUCKET=my-bucket
   python scripts/clear_s3_storage.py
 
-Common prefixes in KohakuHub:
+Common prefixes in cn_model_hub:
   - lfs/              : All LFS (large file storage) objects
   - hf-model-         : All model repositories
   - hf-dataset-       : All dataset repositories

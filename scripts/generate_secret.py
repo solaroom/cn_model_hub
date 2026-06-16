@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate cryptographically secure random secrets for KohakuHub configuration.
+Generate cryptographically secure random secrets for cn_model_hub configuration.
 
 Usage:
     python generate_secret.py [length]
@@ -8,8 +8,8 @@ Usage:
     python generate_secret.py           # Default: 64 characters
 
 Use cases:
-    - KOHAKU_HUB_SESSION_SECRET
-    - KOHAKU_HUB_ADMIN_SECRET_TOKEN
+    - CN_MODEL_HUB_SESSION_SECRET
+    - CN_MODEL_HUB_ADMIN_SECRET_TOKEN
     - LAKEFS_AUTH_ENCRYPT_SECRET_KEY
     - Any other secret configuration values
 """
@@ -49,13 +49,13 @@ def generate_secret(length: int = 64, charset: str = "all") -> str:
 def generate_multiple_secrets():
     """Generate multiple secrets for common use cases."""
     print("=" * 70)
-    print("KohakuHub Secret Generator - Multiple Secrets")
+    print("cn_model_hub Secret Generator - Multiple Secrets")
     print("=" * 70)
     print("\nGenerated secrets for common configuration values:\n")
 
     secrets_config = [
-        ("KOHAKU_HUB_SESSION_SECRET", 64, "all"),
-        ("KOHAKU_HUB_ADMIN_SECRET_TOKEN", 64, "all"),
+        ("CN_MODEL_HUB_SESSION_SECRET", 64, "all"),
+        ("CN_MODEL_HUB_ADMIN_SECRET_TOKEN", 64, "all"),
         ("LAKEFS_AUTH_ENCRYPT_SECRET_KEY", 32, "alphanumeric"),
     ]
 
@@ -100,8 +100,8 @@ Common lengths:
   128 - Maximum security (1024 bits)
 
 Common use cases:
-  KOHAKU_HUB_SESSION_SECRET         - 64 chars (all)
-  KOHAKU_HUB_ADMIN_SECRET_TOKEN     - 64 chars (all)
+  CN_MODEL_HUB_SESSION_SECRET         - 64 chars (all)
+  CN_MODEL_HUB_ADMIN_SECRET_TOKEN     - 64 chars (all)
   LAKEFS_AUTH_ENCRYPT_SECRET_KEY    - 32 chars (alphanumeric)
   Database passwords                 - 32-64 chars (alphanumeric)
         """,

@@ -18,7 +18,7 @@ if [ -f /scripts/init-databases.sh ]; then
     else
         echo "psql not available, skipping database initialization"
         echo "  Please ensure databases exist manually:"
-        echo "  - ${POSTGRES_DB:-kohakuhub}"
+        echo "  - ${POSTGRES_DB:-cn_model_hub}"
         echo "  - ${LAKEFS_DB:-lakefs}"
     fi
 else

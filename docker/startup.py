@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 CRED_FILE = Path("/hub-api-creds/credentials.env")
-LAKEFS_ENDPOINT = os.getenv("KOHAKU_HUB_LAKEFS_ENDPOINT", "http://lakefs:28000")
+LAKEFS_ENDPOINT = os.getenv("CN_MODEL_HUB_LAKEFS_ENDPOINT", "http://lakefs:28000")
 ADMIN_USER = os.getenv("LAKEFS_ADMIN_USER", "admin")
 
 
@@ -65,25 +65,44 @@ def do_setup(client: httpx.Client):
 def write_credentials(access_key, secret_key):
     CRED_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(CRED_FILE, "w") as f:
-        f.write(f"KOHAKU_HUB_LAKEFS_ACCESS_KEY={access_key}\n")
-        f.write(f"KOHAKU_HUB_LAKEFS_SECRET_KEY={secret_key}\n")
+        f.write(f"CN_MODEL_HUB_LAKEFS_ACCESS_KEY={access_key}\n")
+        f.write(f"CN_MODEL_HUB_LAKEFS_SECRET_KEY={secret_key}\n")
     print(f"[startup] Saved credentials to {CRED_FILE}")
 
 
 def load_credentials():
-    if "KOHAKU_HUB_LAKEFS_ACCESS_KEY" in os.environ:
+    if "CN_MODEL_HUB_LAKEFS_ACCESS_KEY" in os.environ:
         return
+    loaded: dict[str, str] = {}
     with open(CRED_FILE) as f:
         for line in f:
             if "=" in line:
                 k, v = line.strip().split("=", 1)
-                os.environ[k] = v
+                loaded[k] = v
+
+    access_key = loaded.get("CN_MODEL_HUB_LAKEFS_ACCESS_KEY") or loaded.get(
+        "KOHAKU_HUB_LAKEFS_ACCESS_KEY"
+    )
+    secret_key = loaded.get("CN_MODEL_HUB_LAKEFS_SECRET_KEY") or loaded.get(
+        "KOHAKU_HUB_LAKEFS_SECRET_KEY"
+    )
+    if not access_key or not secret_key:
+        raise RuntimeError(f"LakeFS credentials missing in {CRED_FILE}")
+
+    os.environ["CN_MODEL_HUB_LAKEFS_ACCESS_KEY"] = access_key
+    os.environ["CN_MODEL_HUB_LAKEFS_SECRET_KEY"] = secret_key
+
+    if (
+        "KOHAKU_HUB_LAKEFS_ACCESS_KEY" in loaded
+        or "KOHAKU_HUB_LAKEFS_SECRET_KEY" in loaded
+    ):
+        write_credentials(access_key, secret_key)
     print(f"[startup] Loaded credentials from {CRED_FILE}")
 
 
 def init_garage():
     """Check if Garage is being used and provide setup instructions."""
-    s3_endpoint = os.getenv("KOHAKU_HUB_S3_ENDPOINT", "")
+    s3_endpoint = os.getenv("CN_MODEL_HUB_S3_ENDPOINT", "")
 
     # Check if we're using Garage (not MinIO or external S3)
     if "garage" not in s3_endpoint.lower():
@@ -135,8 +154,8 @@ def main():
     wait_for_lakefs()
 
     if CRED_FILE.exists() or (
-        "KOHAKU_HUB_LAKEFS_ACCESS_KEY" in os.environ
-        and "KOHAKU_HUB_LAKEFS_SECRET_KEY" in os.environ
+        "CN_MODEL_HUB_LAKEFS_ACCESS_KEY" in os.environ
+        and "CN_MODEL_HUB_LAKEFS_SECRET_KEY" in os.environ
     ):
         load_credentials()
     else:
@@ -152,8 +171,8 @@ def main():
                 write_credentials(access_key, secret_key)
             except Exception as e:
                 print(f"[startup] Setup failed: {e}")
-            os.environ["KOHAKU_HUB_LAKEFS_ACCESS_KEY"] = access_key
-            os.environ["KOHAKU_HUB_LAKEFS_SECRET_KEY"] = secret_key
+            os.environ["CN_MODEL_HUB_LAKEFS_ACCESS_KEY"] = access_key
+            os.environ["CN_MODEL_HUB_LAKEFS_SECRET_KEY"] = secret_key
 
     # Initialize Garage if needed
     init_garage()
@@ -162,12 +181,12 @@ def main():
     run_migrations()
 
     # Get worker count from environment
-    workers = int(os.getenv("KOHAKU_HUB_WORKERS", "4"))
+    workers = int(os.getenv("CN_MODEL_HUB_WORKERS", "4"))
     print(f"[startup] Starting API server with {workers} worker(s)...")
     subprocess.run(
         [
             "uvicorn",
-            "kohakuhub.main:app",
+            "cn_model_hub.main:app",
             "--workers",
             str(workers),
             "--host",

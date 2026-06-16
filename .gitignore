@@ -22,6 +22,11 @@ mlflow-master/
 example.md
 hub-meta/
 hub-storage/
+# Local downloaded model weights for runtime testing. Keep the template files tracked.
+examples/models/qwen2.5-0.5b-local/*
+!examples/models/qwen2.5-0.5b-local/README.md
+!examples/models/qwen2.5-0.5b-local/app.py
+!examples/models/qwen2.5-0.5b-local/requirements.txt
 *.db
 test_*/
 test-*/

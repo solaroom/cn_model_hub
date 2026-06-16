@@ -1,26 +1,26 @@
 #!/bin/sh
-# Database initialization script for KohakuHub
+# Database initialization script for cn_model_hub
 # Creates both hub-api and LakeFS databases if they don't exist
 # Runs before LakeFS starts
 
 set -e
 
-echo "=== KohakuHub Database Initialization ==="
+echo "=== cn_model_hub Database Initialization ==="
 
 # Extract PostgreSQL connection details from DATABASE_URL or individual vars
-if [ -n "$KOHAKU_HUB_DATABASE_URL" ]; then
+if [ -n "$CN_MODEL_HUB_DATABASE_URL" ]; then
     # Parse connection string: postgresql://user:pass@host:port/dbname
-    POSTGRES_USER=$(echo "$KOHAKU_HUB_DATABASE_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
-    POSTGRES_PASSWORD=$(echo "$KOHAKU_HUB_DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-    POSTGRES_HOST=$(echo "$KOHAKU_HUB_DATABASE_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
-    POSTGRES_PORT=$(echo "$KOHAKU_HUB_DATABASE_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
-    POSTGRES_DB=$(echo "$KOHAKU_HUB_DATABASE_URL" | sed -n 's|.*/\([^?]*\).*|\1|p')
+    POSTGRES_USER=$(echo "$CN_MODEL_HUB_DATABASE_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+    POSTGRES_PASSWORD=$(echo "$CN_MODEL_HUB_DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+    POSTGRES_HOST=$(echo "$CN_MODEL_HUB_DATABASE_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
+    POSTGRES_PORT=$(echo "$CN_MODEL_HUB_DATABASE_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
+    POSTGRES_DB=$(echo "$CN_MODEL_HUB_DATABASE_URL" | sed -n 's|.*/\([^?]*\).*|\1|p')
 else
     POSTGRES_USER="${POSTGRES_USER:-hub}"
     POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-hubpass}"
     POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
     POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-    POSTGRES_DB="${POSTGRES_DB:-kohakuhub}"
+    POSTGRES_DB="${POSTGRES_DB:-cn_model_hub}"
 fi
 
 LAKEFS_DB="${LAKEFS_DB:-lakefs}"

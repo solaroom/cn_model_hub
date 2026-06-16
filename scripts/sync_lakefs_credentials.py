@@ -226,8 +226,8 @@ def main():
     try:
         credentials = read_credentials_env(credentials_path)
 
-        lakefs_access_key = credentials.get("KOHAKU_HUB_LAKEFS_ACCESS_KEY")
-        lakefs_secret_key = credentials.get("KOHAKU_HUB_LAKEFS_SECRET_KEY")
+        lakefs_access_key = credentials.get("CN_MODEL_HUB_LAKEFS_ACCESS_KEY")
+        lakefs_secret_key = credentials.get("CN_MODEL_HUB_LAKEFS_SECRET_KEY")
 
         if not lakefs_access_key or not lakefs_secret_key:
             print("✗ Missing LakeFS credentials in credentials.env")

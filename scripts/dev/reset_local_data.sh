@@ -76,8 +76,8 @@ set +a
 # empty state. Without the SAVE, a Valkey crash before the next BGSAVE
 # would resurrect cache entries that point at repos / commits that no
 # longer exist — observable as ghost hits after the reset.
-if docker ps --format '{{.Names}}' | grep -Fxq "kohakuhub-dev-valkey"; then
-  docker exec kohakuhub-dev-valkey valkey-cli FLUSHALL >/dev/null 2>&1 || true
-  docker exec kohakuhub-dev-valkey valkey-cli SAVE >/dev/null 2>&1 || true
-  echo "Flushed kohakuhub-dev-valkey contents and persisted empty RDB"
+if docker ps --format '{{.Names}}' | grep -Fxq "cn_model_hub-dev-valkey"; then
+  docker exec cn_model_hub-dev-valkey valkey-cli FLUSHALL >/dev/null 2>&1 || true
+  docker exec cn_model_hub-dev-valkey valkey-cli SAVE >/dev/null 2>&1 || true
+  echo "Flushed cn_model_hub-dev-valkey contents and persisted empty RDB"
 fi

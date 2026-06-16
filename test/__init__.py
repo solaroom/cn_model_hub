@@ -1,1 +1,1 @@
-"""Root test package for KohakuHub."""
+"""Root test package for cn_model_hub."""

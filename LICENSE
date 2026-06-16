@@ -629,8 +629,8 @@ to attach them to the start of each source file to most effectively
 state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-    KohakuHub: Minimal Self-Hosted HuggingFace Alternative.
-    Copyright (C) 2025  KohakuBlueLeaf (Shih-Ying Yeh)
+    cn_model_hub: Chinese open-source AI model community platform.
+    Copyright (C) 2026  cn_model_hub contributors
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published

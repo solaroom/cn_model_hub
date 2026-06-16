@@ -39,10 +39,10 @@ def run_command(cmd: list[str], cwd: Path | None = None, description: str = ""):
 def main():
     """Main function."""
     root_dir = Path(__file__).parent.parent
-    ui_dir = root_dir / "src" / "kohaku-hub-ui"
-    admin_dir = root_dir / "src" / "kohaku-hub-admin"
+    ui_dir = root_dir / "src" / "cn-model-hub-ui"
+    admin_dir = root_dir / "src" / "cn-model-hub-admin"
 
-    print("\nKohakuHub Code Formatter")
+    print("\ncn_model_hub Code Formatter")
     print("=" * 60)
 
     # Step 3: Format UI

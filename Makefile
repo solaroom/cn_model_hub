@@ -1,17 +1,17 @@
 SHELL := /bin/bash
 PYTHON ?= $(if $(wildcard ./venv/bin/python),./venv/bin/python,python)
-TEST_ROOT ?= test/kohakuhub
-SOURCE_ROOT ?= src/kohakuhub
+TEST_ROOT ?= test/cn_model_hub
+SOURCE_ROOT ?= src/cn_model_hub
 RANGE_DIR ?=
 TEST_RANGE = $(if $(strip $(RANGE_DIR)),$(TEST_ROOT)/$(RANGE_DIR),$(TEST_ROOT))
 COV_RANGE = $(if $(strip $(RANGE_DIR)),$(SOURCE_ROOT)/$(RANGE_DIR),$(SOURCE_ROOT))
 COV_FAIL_UNDER ?= $(if $(strip $(RANGE_DIR)),0,80)
 COV_TYPES ?= xml term-missing
 PYTEST_ARGS ?= -ra -vv --durations=10 --cov=$(COV_RANGE) --cov-config=.coveragerc --cov-fail-under=$(COV_FAIL_UNDER) $(shell for type in $(COV_TYPES); do echo --cov-report=$$type; done)
-UI_DIR ?= src/kohaku-hub-ui
-UI_TEST_ROOT ?= test/kohaku-hub-ui
-UI_ADMIN_DIR ?= src/kohaku-hub-admin
-UI_ADMIN_TEST_ROOT ?= test/kohaku-hub-admin
+UI_DIR ?= src/cn-model-hub-ui
+UI_TEST_ROOT ?= test/cn-model-hub-ui
+UI_ADMIN_DIR ?= src/cn-model-hub-admin
+UI_ADMIN_TEST_ROOT ?= test/cn-model-hub-admin
 
 .PHONY: help init-env install-backend install-frontend install infra-up infra-down \
 	backend seed-demo reset-local-data reset-and-seed ui ui-only admin status \
@@ -28,7 +28,7 @@ help:
 	@echo "  make infra-down       Stop local infra containers but keep persisted data"
 	@echo "  make seed-demo        Run migrations + first-run demo seed without starting uvicorn"
 	@echo "  make verify-seed-demo Verify the local demo seed fixtures without starting uvicorn"
-	@echo "  make reset-local-data Dangerously clear local KohakuHub dev data through the local reset helper"
+	@echo "  make reset-local-data Dangerously clear local cn_model_hub dev data through the local reset helper"
 	@echo "  make reset-and-seed   Reset persisted local data, then bootstrap fresh demo data"
 	@echo "  make backend          Run FastAPI backend in reload mode"
 	@echo "  make ui               Run main UI on :5173 with admin mounted at /admin (admin Vite on :5174)"
@@ -78,7 +78,7 @@ backend: init-env
 
 seed-demo: infra-up
 	# Force the one-time local demo bootstrap even if auto-seed is disabled in .env.dev.
-	KOHAKU_HUB_DEV_AUTO_SEED=true ./scripts/dev/run_backend.sh --prepare-only
+	CN_MODEL_HUB_DEV_AUTO_SEED=true ./scripts/dev/run_backend.sh --prepare-only
 	$(MAKE) verify-seed-demo
 
 verify-seed-demo: infra-up
@@ -104,8 +104,8 @@ ui:
 	@# the package manager process does not reliably forward SIGINT/SIGTERM
 	@# to its child process in every shell environment.
 	@trap 'kill 0 2>/dev/null' EXIT INT TERM; \
-	( cd src/kohaku-hub-admin && exec ./node_modules/.bin/vite ) & \
-	( cd src/kohaku-hub-ui    && exec ./node_modules/.bin/vite ) & \
+	( cd src/cn-model-hub-admin && exec ./node_modules/.bin/vite ) & \
+	( cd src/cn-model-hub-ui    && exec ./node_modules/.bin/vite ) & \
 	wait
 
 ui-only:
@@ -150,13 +150,13 @@ test-ui-admin:
 test: test-backend test-ui test-ui-admin
 
 status:
-	docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep 'kohakuhub-dev-' || true
+	docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep 'cn_model_hub-dev-' || true
 
 logs-postgres:
-	docker logs -f kohakuhub-dev-postgres
+	docker logs -f cn_model_hub-dev-postgres
 
 logs-minio:
-	docker logs -f kohakuhub-dev-minio
+	docker logs -f cn_model_hub-dev-minio
 
 logs-lakefs:
-	docker logs -f kohakuhub-dev-lakefs
+	docker logs -f cn_model_hub-dev-lakefs

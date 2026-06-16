@@ -1,0 +1,346 @@
+"""Main FastAPI application for cn_model_hub."""
+
+import uuid
+from contextlib import asynccontextmanager
+
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from cn_model_hub.api import (
+    admin,
+    assistant,
+    avatar,
+    branches,
+    discussions,
+    files,
+    likes,
+    mlflow,
+    misc,
+    search,
+    space_runtime,
+    settings,
+    stats,
+    validation,
+)
+from cn_model_hub.api.repo.utils.hf import HFErrorCode, hf_repo_not_found
+from cn_model_hub.api.invitation import router as invitation
+from cn_model_hub.auth import router as auth_router
+from cn_model_hub.api.auth import external_tokens
+from cn_model_hub.config import cfg
+from cn_model_hub.db import Repository, User
+from cn_model_hub.db_operations import get_repository
+from cn_model_hub.logger import get_logger
+from cn_model_hub.api.commit import history as commit_history
+from cn_model_hub.api.commit import router as commits
+from cn_model_hub.api.fallback import with_repo_fallback
+from cn_model_hub.api.files import resolve_file_get, resolve_file_head
+from cn_model_hub.api import evaluations
+from cn_model_hub.api.org import router as org
+from cn_model_hub.api.quota import router as quota
+from cn_model_hub.auth.dependencies import get_optional_user
+from cn_model_hub.auth.permissions import RepoReadDeniedError
+from cn_model_hub.utils.s3 import init_storage
+from cn_model_hub.api.git.routers import http as git_http
+from cn_model_hub.api.git.routers import lfs, ssh_keys
+from cn_model_hub.api.repo.routers import crud as repo_crud
+from cn_model_hub.api.repo.routers import info as repo_info
+from cn_model_hub.api.repo.routers import tree as repo_tree
+from cn_model_hub.api.xet.routers import cas as xet_cas
+from cn_model_hub.api.xet.routers import xet as xet_token
+from cn_model_hub.api import not_implemented as not_implemented_router
+
+# Conditional import for Dataset Viewer
+if not cfg.app.disable_dataset_viewer:
+    from cn_model_hub.datasetviewer import router as dataset_viewer
+
+logger = get_logger("MAIN")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Validate configuration for production safety
+    config_warnings = cfg.validate_production_safety()
+    if config_warnings:
+        logger.warning("=" * 80)
+        logger.warning("CONFIGURATION WARNINGS - Using default/test values:")
+        logger.warning("=" * 80)
+        for warning in config_warnings:
+            logger.warning(f"  - {warning}")
+        logger.warning("=" * 80)
+        logger.warning(
+            "These defaults are fine for development/testing but MUST be changed for production!"
+        )
+        logger.warning("=" * 80)
+
+    init_storage()
+
+    # Initialize L2 cache (Valkey) — silent if disabled or unreachable.
+    # Runs the boot-time flush coordinator so Mode-B namespaces are wiped
+    # whenever Valkey's run_id has changed since the last seen value
+    # (i.e., Valkey was restarted, even if the API was not).
+    from cn_model_hub.cache import init_cache, close_cache as _close_cache
+    await init_cache()
+
+    # Initialize Meilisearch settings when configured. Search degrades to the
+    # database implementation if Meilisearch is disabled or still starting.
+    from cn_model_hub.search_index import ensure_repository_index
+    ensure_repository_index()
+
+    try:
+        yield
+    finally:
+        # Drop the LakeFS REST client's pooled httpx connections so the
+        # worker exits cleanly. Without this the keepalive sockets leak
+        # at shutdown and can hold the process from terminating.
+        from cn_model_hub.lakefs_rest_client import close_lakefs_rest_client
+        await close_lakefs_rest_client()
+        await _close_cache()
+
+
+app = FastAPI(
+    title="cn_model_hub",
+    description="HuggingFace-compatible hub with LakeFS and S3 storage",
+    version="0.0.1",
+    lifespan=lifespan,
+)
+
+
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    """Attach an ``X-Request-Id`` header to every response.
+
+    ``huggingface_hub.HfHubHTTPError`` reads this header (falling back to
+    ``X-Amzn-Trace-Id`` / ``X-Amz-Cf-Id``) and embeds the value in the
+    exception's ``request_id`` attribute. Surfacing it on every response —
+    success and failure alike — gives operators a correlation token for
+    debugging across the backend logs and the client traceback.
+
+    If the client already supplied an ``X-Request-Id`` header (e.g. upstream
+    gateway, load test rig), we echo it back rather than overwriting.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        incoming = request.headers.get("x-request-id")
+        request_id = incoming or uuid.uuid4().hex
+        response = await call_next(request)
+        response.headers.setdefault("X-Request-Id", request_id)
+        return response
+
+
+app.add_middleware(RequestIdMiddleware)
+
+
+@app.exception_handler(RepoReadDeniedError)
+async def _repo_read_denied_handler(request: Request, exc: RepoReadDeniedError):
+    """Convert ``RepoReadDeniedError`` into HF's ``RepoNotFound`` wire shape.
+
+    Centralizing the conversion here gives every endpoint that calls
+    ``check_repo_read_permission`` the same privacy-preserving wire shape
+    for free — info / tree / paths-info / resolve HEAD/GET / commits /
+    likes / stats / xet-lookup all stop emitting raw ``HTTPException(401|403)``
+    bodies and start emitting ``404 + X-Error-Code: RepoNotFound`` with an
+    empty body. ``huggingface_hub.utils._http.hf_raise_for_status`` then
+    raises ``RepositoryNotFoundError`` on the client, which is what
+    downstream libraries (``transformers``, ``datasets``, …) key off for
+    actionable error messages.
+
+    See ``RepoReadDeniedError``'s docstring for the full propagation
+    story. Short version: the inheritance choice (``Exception``, not
+    ``HTTPException``) keeps the fallback decorator's ``except
+    HTTPException`` from translating it into a 4xx, **and** an explicit
+    ``except RepoReadDeniedError: raise`` in
+    ``api/fallback/decorators.py`` keeps the generic ``except
+    Exception`` from collapsing it into a 500. Both are needed; missing
+    either degrades the wire shape silently. The chain probe is
+    intentionally not entered for this case — the strict-consistency
+    "local namespace wins absolutely" rule applies even when the local
+    layer is hiding the repo.
+    """
+    return hf_repo_not_found(exc.repo_id, exc.repo_type)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    # Needed for the pure-client preview path (safetensors/parquet): the SPA
+    # issues cross-origin Range reads against /resolve/ and follows the 302 to
+    # MinIO. Without explicit expose_headers, browsers strip everything beyond
+    # the "CORS-safelisted" set, hiding Content-Range / X-Linked-* / ETag from
+    # JS. Keep in sync with the header set emitted by _get_file_metadata in
+    # src/cn_model_hub/api/files.py.
+    expose_headers=[
+        "Accept-Ranges",
+        "Content-Range",
+        "Content-Length",
+        "ETag",
+        "Location",
+        "X-Repo-Commit",
+        "X-Linked-Etag",
+        "X-Linked-Size",
+        "X-Xet-Hash",
+        # Chain trace (#78): the admin chain tester reads X-Chain-Trace
+        # from the response of a real request to render the per-hop
+        # timeline. The header carries no protocol semantics for
+        # huggingface_hub clients, which ignore unknown headers.
+        "X-Chain-Trace",
+    ],
+)
+
+app.include_router(auth_router, prefix=cfg.app.api_base)
+app.include_router(external_tokens.router, prefix=cfg.app.api_base, tags=["auth"])
+app.include_router(repo_crud.router, prefix=cfg.app.api_base, tags=["repositories"])
+app.include_router(repo_info.router, prefix=cfg.app.api_base, tags=["repositories"])
+app.include_router(repo_tree.router, prefix=cfg.app.api_base, tags=["repositories"])
+app.include_router(files.router, prefix=cfg.app.api_base, tags=["files"])
+app.include_router(search.router, prefix=cfg.app.api_base, tags=["search"])
+app.include_router(assistant.router, prefix=cfg.app.api_base, tags=["assistant"])
+app.include_router(commits, prefix=cfg.app.api_base, tags=["commits"])
+app.include_router(commit_history.router, prefix=cfg.app.api_base, tags=["commits"])
+app.include_router(lfs.router, tags=["lfs"])
+app.include_router(branches.router, prefix=cfg.app.api_base, tags=["branches"])
+app.include_router(settings.router, prefix=cfg.app.api_base, tags=["settings"])
+app.include_router(avatar.router, prefix=cfg.app.api_base, tags=["avatars"])
+app.include_router(likes.router, prefix=cfg.app.api_base, tags=["likes"])
+app.include_router(discussions.router, prefix=cfg.app.api_base, tags=["discussions"])
+app.include_router(stats.router, prefix=cfg.app.api_base, tags=["stats"])
+app.include_router(space_runtime.router, prefix=cfg.app.api_base, tags=["spaces"])
+app.include_router(mlflow.router, prefix=cfg.app.api_base, tags=["mlflow"])
+app.include_router(evaluations.router, prefix=cfg.app.api_base, tags=["evaluations"])
+app.include_router(invitation, prefix=cfg.app.api_base, tags=["invitations"])
+app.include_router(quota, tags=["quota"])
+app.include_router(admin.router, prefix="/admin/api", tags=["admin"])
+app.include_router(misc.router, prefix=cfg.app.api_base, tags=["utils"])
+app.include_router(org, prefix="/org", tags=["organizations"])
+app.include_router(git_http.router, tags=["git"])
+app.include_router(ssh_keys.router, tags=["ssh-keys"])
+app.include_router(validation.router, tags=["validation"])
+app.include_router(xet_token.router, prefix=cfg.app.api_base, tags=["xet"])
+app.include_router(xet_cas.router, tags=["xet-cas"])
+
+# Optional dataset file preview API.
+if not cfg.app.disable_dataset_viewer:
+    app.include_router(dataset_viewer.router, prefix=cfg.app.api_base)
+    logger.info("Dataset Viewer enabled")
+else:
+    logger.info("Dataset Viewer disabled")
+
+# Registered last so catch-all 501 routes for won't-support features
+# (discussions, space runtime, collections, webhooks) never shadow the
+# real endpoints defined above.
+app.include_router(
+    not_implemented_router.router,
+    prefix=cfg.app.api_base,
+    tags=["not-implemented"],
+)
+
+
+@app.head("/{namespace}/{name}/resolve/{revision}/{path:path}")
+@app.head("/{type}s/{namespace}/{name}/resolve/{revision}/{path:path}")
+@with_repo_fallback("resolve")
+async def public_resolve_head(
+    namespace: str,
+    name: str,
+    revision: str,
+    path: str,
+    request: Request,
+    type: str = "model",
+    fallback: bool = True,
+    user: User | None = Depends(get_optional_user),
+):
+    """Public HEAD endpoint without /api prefix - returns file metadata only."""
+    logger.debug(f"HEAD {type}/{namespace}/{name}/resolve/{revision}/{path}")
+
+    repo = get_repository(type, namespace, name)
+    if not repo:
+        logger.warning(f"Repository not found: {type}/{namespace}/{name}")
+        # Public resolve is on the critical `huggingface_hub` download path;
+        # emit the HF-compatible headers so the client raises
+        # `RepositoryNotFoundError` with a useful server_message instead of
+        # a generic HfHubHTTPError — transformers / datasets / etc. all
+        # special-case the named exception.
+        raise HTTPException(
+            status_code=404,
+            detail={"error": f"Repository '{namespace}/{name}' not found"},
+            headers={
+                "X-Error-Code": HFErrorCode.REPO_NOT_FOUND,
+                "X-Error-Message": f"Repository '{namespace}/{name}' ({type}) not found",
+            },
+        )
+
+    return await resolve_file_head(
+        repo_type=type,
+        namespace=namespace,
+        name=name,
+        revision=revision,
+        path=path,
+        request=request,
+        user=user,
+    )
+
+
+@app.get("/{namespace}/{name}/resolve/{revision}/{path:path}")
+@app.get("/{type}s/{namespace}/{name}/resolve/{revision}/{path:path}")
+@with_repo_fallback("resolve")
+async def public_resolve_get(
+    namespace: str,
+    name: str,
+    revision: str,
+    path: str,
+    request: Request,
+    type: str = "model",
+    fallback: bool = True,
+    user: User | None = Depends(get_optional_user),
+):
+    """Public GET endpoint without /api prefix - redirects to S3 download."""
+    logger.debug(f"GET {type}/{namespace}/{name}/resolve/{revision}/{path}")
+
+    repo = get_repository(type, namespace, name)
+    if not repo:
+        logger.warning(f"Repository not found: {type}/{namespace}/{name}")
+        # Public resolve is on the critical `huggingface_hub` download path;
+        # emit the HF-compatible headers so the client raises
+        # `RepositoryNotFoundError` with a useful server_message instead of
+        # a generic HfHubHTTPError — transformers / datasets / etc. all
+        # special-case the named exception.
+        raise HTTPException(
+            status_code=404,
+            detail={"error": f"Repository '{namespace}/{name}' not found"},
+            headers={
+                "X-Error-Code": HFErrorCode.REPO_NOT_FOUND,
+                "X-Error-Message": f"Repository '{namespace}/{name}' ({type}) not found",
+            },
+        )
+
+    return await resolve_file_get(
+        repo_type=type,
+        namespace=namespace,
+        name=name,
+        revision=revision,
+        path=path,
+        request=request,
+        user=user,
+    )
+
+
+@app.get("/")
+def root():
+    """Root endpoint with API information."""
+    return {
+        "name": "cn_model_hub",
+        "version": "0.0.1",
+        "description": "HuggingFace-compatible hub with LakeFS and S3 storage",
+        "endpoints": {
+            "api": cfg.app.api_base,
+            "auth": f"{cfg.app.api_base}/auth",
+            "docs": "/docs",
+            "redoc": "/redoc",
+        },
+    }
+
+
+@app.get("/health")
+def health():
+    """Health check endpoint."""
+    return {"status": "ok"}

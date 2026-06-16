@@ -48,6 +48,9 @@ dependencies = [
 urls = { "Homepage" = "https://github.com/solaroom/cn_model_hub" }
 
 [project.optional-dependencies]
+assistant = [
+    "sentence-transformers>=3.0.0",
+]
 dev = [
     "hfutils>=0.13.0",
     "huggingface_hub>=0.20.0",

@@ -1,4 +1,4 @@
-"""Pytest fixtures for KohakuHub backend tests."""
+"""Pytest fixtures for cn_model_hub backend tests."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ import httpx
 import pytest
 import pytest_asyncio
 
-from test.kohakuhub.support.bootstrap import ADMIN_TOKEN, DEFAULT_PASSWORD
-from test.kohakuhub.support.live_server import start_live_server, stop_live_server
-from test.kohakuhub.support.service_bootstrap import apply_service_test_env
-from test.kohakuhub.support.service_state import create_service_test_state
+from test.cn_model_hub.support.bootstrap import ADMIN_TOKEN, DEFAULT_PASSWORD
+from test.cn_model_hub.support.live_server import start_live_server, stop_live_server
+from test.cn_model_hub.support.service_bootstrap import apply_service_test_env
+from test.cn_model_hub.support.service_state import create_service_test_state
 
 apply_service_test_env()
 
@@ -82,7 +82,7 @@ def _restore_backend_state_per_test(request):
     # pool tied to its now-closed asyncio.run loop). Without the second
     # reset, handlers raise ``Event loop is closed`` on the first LakeFS
     # call.
-    from kohakuhub import lakefs_rest_client as _lakefs_rest
+    from cn_model_hub import lakefs_rest_client as _lakefs_rest
     _lakefs_rest._singleton_client = None
 
     if request.node.get_closest_marker("backend_per_test") is not None:

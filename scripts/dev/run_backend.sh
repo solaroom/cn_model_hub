@@ -48,11 +48,11 @@ set +a
 # .env.dev.example. The companion ``ensure_valkey`` step in
 # scripts/dev/up_infra.sh always runs Valkey on host port 26379, so this
 # default is correct for any standard local-dev setup. Explicit
-# ``KOHAKU_HUB_CACHE_URL`` / ``KOHAKU_HUB_CACHE_ENABLED`` lines in
+# ``CN_MODEL_HUB_CACHE_URL`` / ``CN_MODEL_HUB_CACHE_ENABLED`` lines in
 # .env.dev still win — this only fills the gap when the contributor has
 # neither, and the implicit-enable in config.py picks it up from there.
-: "${KOHAKU_HUB_CACHE_URL:=redis://127.0.0.1:26379/0}"
-export KOHAKU_HUB_CACHE_URL
+: "${CN_MODEL_HUB_CACHE_URL:=redis://127.0.0.1:26379/0}"
+export CN_MODEL_HUB_CACHE_URL
 
 export PYTHONPATH="${ROOT_DIR}/src${PYTHONPATH:+:${PYTHONPATH}}"
 
@@ -71,7 +71,7 @@ fi
 
 "${PYTHON_BIN}" "${ROOT_DIR}/scripts/run_migrations.py"
 
-if [[ "${KOHAKU_HUB_DEV_AUTO_SEED:-true}" == "true" && "${SKIP_SEED}" != "true" ]]; then
+if [[ "${CN_MODEL_HUB_DEV_AUTO_SEED:-true}" == "true" && "${SKIP_SEED}" != "true" ]]; then
   # Keep local demo data creation on the same bootstrap path as normal backend startup.
   "${PYTHON_BIN}" "${ROOT_DIR}/scripts/dev/seed_demo_data.py"
 fi
@@ -81,7 +81,7 @@ if [[ "${PREPARE_ONLY}" == "true" ]]; then
   exit 0
 fi
 
-exec "${PYTHON_BIN}" -m uvicorn kohakuhub.main:app \
+exec "${PYTHON_BIN}" -m uvicorn cn_model_hub.main:app \
   --reload \
   --host 0.0.0.0 \
   --port 48888

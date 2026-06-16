@@ -7,7 +7,7 @@ coverage:
           - frontend
           - frontend-admin
         paths:
-          - "!src/kohaku-hub-ui/src/components/repo/RepoViewer.vue"
+          - "!src/cn-model-hub-ui/src/components/repo/RepoViewer.vue"
           - "!src/components/repo/RepoViewer.vue"
         # Allow a small drop from base. New large modules with
         # hard-to-test canvas / composable lifecycle paths (e.g.
@@ -33,6 +33,6 @@ coverage:
         # logic; project gating already tolerates the structural
         # gap, so patch should not gate on it either.
         paths:
-          - "!src/kohaku-hub-ui/src/components/repo/RepoViewer.vue"
+          - "!src/cn-model-hub-ui/src/components/repo/RepoViewer.vue"
           - "!src/components/repo/RepoViewer.vue"
         threshold: 1%

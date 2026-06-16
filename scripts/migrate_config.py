@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Configuration Migration Script for KohakuHub
+Configuration Migration Script for cn_model_hub
 
 This script migrates existing docker-compose.yml and config.toml to the latest format.
 It reads existing values and only prompts for new fields that don't exist.
@@ -86,10 +86,10 @@ def read_existing_docker_compose(filepath: Path) -> dict:
                     # New section started
                     in_environment = False
                     in_hub_api = False
-                elif stripped.startswith("- KOHAKU_HUB_"):
+                elif stripped.startswith("- CN_MODEL_HUB_"):
                     # Parse environment variable
-                    # Format: - KOHAKU_HUB_KEY=value
-                    match = re.match(r"- (KOHAKU_HUB_\w+)=(.+?)(?:\s+#.*)?$", stripped)
+                    # Format: - CN_MODEL_HUB_KEY=value
+                    match = re.match(r"- (CN_MODEL_HUB_\w+)=(.+?)(?:\s+#.*)?$", stripped)
                     if match:
                         key, value = match.groups()
                         env_vars[key] = value.strip()
@@ -191,7 +191,7 @@ def migrate_docker_compose(existing_env: dict, auto_mode: bool = False) -> dict:
     """Migrate docker-compose environment variables.
 
     Args:
-        existing_env: Dict of existing KOHAKU_HUB_* variables
+        existing_env: Dict of existing CN_MODEL_HUB_* variables
         auto_mode: If True, use defaults for new fields without prompting
 
     Returns:
@@ -205,7 +205,7 @@ def migrate_docker_compose(existing_env: dict, auto_mode: bool = False) -> dict:
 
     # New fields to check and add if missing
     new_fields = {
-        "KOHAKU_HUB_DATABASE_KEY": {
+        "CN_MODEL_HUB_DATABASE_KEY": {
             "prompt": "Database encryption key (for external tokens)",
             "default": generate_secret(32),  # 43 chars
             "comment": "For encrypting external fallback tokens (generate with: openssl rand -hex 32)",
@@ -215,7 +215,7 @@ def migrate_docker_compose(existing_env: dict, auto_mode: bool = False) -> dict:
             "default": "hub-storage",
             "comment": "S3 bucket for LakeFS blockstore",
         },
-        "KOHAKU_HUB_FALLBACK_REQUIRE_AUTH": {
+        "CN_MODEL_HUB_FALLBACK_REQUIRE_AUTH": {
             "prompt": "Require authentication for fallback access? (true/false)",
             "default": "false",
             "comment": "Set true to require authentication for fallback access",
@@ -330,11 +330,11 @@ def write_docker_compose(
         stripped = line.strip()
 
         # Replace known variables
-        if stripped.startswith("- KOHAKU_HUB_") or stripped.startswith(
+        if stripped.startswith("- CN_MODEL_HUB_") or stripped.startswith(
             "- LAKEFS_BLOCKSTORE_"
         ):
             match = re.match(
-                r"(\s*)- ((?:KOHAKU_HUB|LAKEFS_BLOCKSTORE)_\w+)=(.+?)(?:\s+#.*)?$",
+                r"(\s*)- ((?:CN_MODEL_HUB|LAKEFS_BLOCKSTORE)_\w+)=(.+?)(?:\s+#.*)?$",
                 line,
             )
             if match:
@@ -416,7 +416,7 @@ def write_config_toml(filepath: Path, config: dict):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Migrate KohakuHub configuration to latest format"
+        description="Migrate cn_model_hub configuration to latest format"
     )
     parser.add_argument(
         "--auto",
@@ -442,7 +442,7 @@ def main():
     args = parser.parse_args()
 
     print("\n" + "=" * 60)
-    print("KohakuHub Configuration Migration Tool")
+    print("cn_model_hub Configuration Migration Tool")
     print("=" * 60)
 
     repo_root = Path(__file__).parent.parent

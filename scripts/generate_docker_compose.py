@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Docker Compose Generator for KohakuHub
+Docker Compose Generator for cn_model_hub
 
 This script generates a docker-compose.yml file based on user preferences.
-Can read configuration from kohakuhub.conf file for automation.
+Can read configuration from cn_model_hub.conf file for automation.
 """
 
 import argparse
@@ -296,14 +296,14 @@ def generate_hub_api_service(config: dict) -> str:
             s3_region = "garage"  # Garage uses custom region name
             # Garage: MUST use s3v4 (only signature version supported)
             s3_sig_version_line = (
-                "      - KOHAKU_HUB_S3_SIGNATURE_VERSION=s3v4  # Required for Garage"
+                "      - CN_MODEL_HUB_S3_SIGNATURE_VERSION=s3v4  # Required for Garage"
             )
         else:  # minio
             s3_endpoint_internal = "http://minio:9000"
             s3_endpoint_public = "http://127.0.0.1:29001"
             s3_region = "us-east-1"  # MinIO works with us-east-1
             # MinIO: Don't set signature_version (uses default/s3v2-compatible)
-            s3_sig_version_line = "      # - KOHAKU_HUB_S3_SIGNATURE_VERSION=s3v4  # Uncomment for R2/AWS S3 (leave commented for MinIO)"
+            s3_sig_version_line = "      # - CN_MODEL_HUB_S3_SIGNATURE_VERSION=s3v4  # Uncomment for R2/AWS S3 (leave commented for MinIO)"
     else:
         s3_endpoint_internal = config["s3_endpoint"]
         s3_endpoint_public = config["s3_endpoint"]
@@ -312,11 +312,11 @@ def generate_hub_api_service(config: dict) -> str:
         s3_sig_version = config.get("s3_signature_version", "s3v4")
         if s3_sig_version:
             s3_sig_version_line = (
-                f"      - KOHAKU_HUB_S3_SIGNATURE_VERSION={s3_sig_version}"
+                f"      - CN_MODEL_HUB_S3_SIGNATURE_VERSION={s3_sig_version}"
             )
         else:
             s3_sig_version_line = (
-                "      # - KOHAKU_HUB_S3_SIGNATURE_VERSION=s3v4  # Uncomment if needed"
+                "      # - CN_MODEL_HUB_S3_SIGNATURE_VERSION=s3v4  # Uncomment if needed"
             )
 
     # No Garage-specific config needed (manual setup)
@@ -330,67 +330,74 @@ def generate_hub_api_service(config: dict) -> str:
       - "48888:48888" # Internal API port (optional, for debugging)
 {depends_on_str}    environment:
       ## ===== CRITICAL: Endpoint Configuration (MUST CHANGE) =====
-      ## These determine how users access your KohakuHub instance
-      - KOHAKU_HUB_BASE_URL=http://127.0.0.1:28080 # Change to your public URL (e.g., https://hub.example.com)
-      - KOHAKU_HUB_S3_PUBLIC_ENDPOINT={s3_endpoint_public} # Change to your S3 public URL
+      ## These determine how users access your cn_model_hub instance
+      - CN_MODEL_HUB_BASE_URL=http://127.0.0.1:28080 # Change to your public URL (e.g., https://hub.example.com)
+      - CN_MODEL_HUB_S3_PUBLIC_ENDPOINT={s3_endpoint_public} # Change to your S3 public URL
 
       ## ===== CRITICAL: Security Configuration (MUST CHANGE) =====
-      - KOHAKU_HUB_SESSION_SECRET={config["session_secret"]}
-      - KOHAKU_HUB_ADMIN_SECRET_TOKEN={config["admin_secret"]}
-      - KOHAKU_HUB_DATABASE_KEY={config["database_key"]}
+      - CN_MODEL_HUB_SESSION_SECRET={config["session_secret"]}
+      - CN_MODEL_HUB_ADMIN_SECRET_TOKEN={config["admin_secret"]}
+      - CN_MODEL_HUB_DATABASE_KEY={config["database_key"]}
 
       ## ===== Performance Configuration =====
-      - KOHAKU_HUB_WORKERS=4 # Number of worker processes (1-8, recommend: CPU cores)
+      - CN_MODEL_HUB_WORKERS=4 # Number of worker processes (1-8, recommend: CPU cores)
 
       ## ===== Database Configuration =====
-      - KOHAKU_HUB_DB_BACKEND=postgres
-      - KOHAKU_HUB_DATABASE_URL={db_url}
+      - CN_MODEL_HUB_DB_BACKEND=postgres
+      - CN_MODEL_HUB_DATABASE_URL={db_url}
 
       ## ===== S3 Storage Configuration =====
-      - KOHAKU_HUB_S3_ENDPOINT={s3_endpoint_internal}
-      - KOHAKU_HUB_S3_ACCESS_KEY={config["s3_access_key"]}
-      - KOHAKU_HUB_S3_SECRET_KEY={config["s3_secret_key"]}
-      - KOHAKU_HUB_S3_BUCKET={config["s3_bucket"]}
-      - KOHAKU_HUB_S3_REGION={s3_region}  # auto (recommended), us-east-1, or your AWS region
+      - CN_MODEL_HUB_S3_ENDPOINT={s3_endpoint_internal}
+      - CN_MODEL_HUB_S3_ACCESS_KEY={config["s3_access_key"]}
+      - CN_MODEL_HUB_S3_SECRET_KEY={config["s3_secret_key"]}
+      - CN_MODEL_HUB_S3_BUCKET={config["s3_bucket"]}
+      - CN_MODEL_HUB_S3_REGION={s3_region}  # auto (recommended), us-east-1, or your AWS region
 {s3_sig_version_line}
 
       ## ===== LakeFS Configuration =====
-      - KOHAKU_HUB_LAKEFS_ENDPOINT=http://lakefs:28000
-      - KOHAKU_HUB_LAKEFS_REPO_NAMESPACE=hf
+      - CN_MODEL_HUB_LAKEFS_ENDPOINT=http://lakefs:28000
+      - CN_MODEL_HUB_LAKEFS_REPO_NAMESPACE=hf
       # LakeFS credentials auto-generated on first start
 
       ## ===== Application Configuration =====
-      - KOHAKU_HUB_SITE_NAME=KohakuHub
-      - KOHAKU_HUB_LFS_THRESHOLD_BYTES=1000000
-      - KOHAKU_HUB_LFS_MULTIPART_THRESHOLD_BYTES=100_000_000 # 100MB - use multipart for files larger than this
-      - KOHAKU_HUB_LFS_MULTIPART_CHUNK_SIZE_BYTES=50_000_000 # 50MB - size of each part (min 5MB except last)
-      - KOHAKU_HUB_LFS_KEEP_VERSIONS=5
-      - KOHAKU_HUB_LFS_AUTO_GC=true
-      - KOHAKU_HUB_AUTO_MIGRATE=true # Auto-confirm database migrations (required for Docker)
-      - KOHAKU_HUB_LOG_LEVEL=INFO
-      - KOHAKU_HUB_LOG_FORMAT=terminal
-      - KOHAKU_HUB_LOG_DIR=logs/
+      - CN_MODEL_HUB_SITE_NAME=cn_model_hub
+      - CN_MODEL_HUB_LFS_THRESHOLD_BYTES=1000000
+      - CN_MODEL_HUB_LFS_MULTIPART_THRESHOLD_BYTES=2_000_000_000 # 2GB - keep common demo models on single PUT
+      - CN_MODEL_HUB_LFS_MULTIPART_CHUNK_SIZE_BYTES=50_000_000 # 50MB - size of each part (min 5MB except last)
+      - CN_MODEL_HUB_LFS_KEEP_VERSIONS=5
+      - CN_MODEL_HUB_LFS_AUTO_GC=true
+      - CN_MODEL_HUB_AUTO_MIGRATE=true # Auto-confirm database migrations (required for Docker)
+      - CN_MODEL_HUB_LOG_LEVEL=INFO
+      - CN_MODEL_HUB_LOG_FORMAT=terminal
+      - CN_MODEL_HUB_LOG_DIR=logs/
 
       ## ===== Auth & SMTP Configuration =====
-      - KOHAKU_HUB_REQUIRE_EMAIL_VERIFICATION=false
-      - KOHAKU_HUB_INVITATION_ONLY=false # Set to true to require invitation for registration
-      - KOHAKU_HUB_SESSION_EXPIRE_HOURS=168
-      - KOHAKU_HUB_TOKEN_EXPIRE_DAYS=365
-      - KOHAKU_HUB_ADMIN_ENABLED=true
+      - CN_MODEL_HUB_REQUIRE_EMAIL_VERIFICATION=false
+      - CN_MODEL_HUB_INVITATION_ONLY=false # Set to true to require invitation for registration
+      - CN_MODEL_HUB_SESSION_EXPIRE_HOURS=168
+      - CN_MODEL_HUB_TOKEN_EXPIRE_DAYS=365
+      - CN_MODEL_HUB_ADMIN_ENABLED=true
       # SMTP (Optional - for email verification)
-      - KOHAKU_HUB_SMTP_ENABLED=false
-      - KOHAKU_HUB_SMTP_HOST=smtp.gmail.com
-      - KOHAKU_HUB_SMTP_PORT=587
-      - KOHAKU_HUB_SMTP_USERNAME=
-      - KOHAKU_HUB_SMTP_PASSWORD=
-      - KOHAKU_HUB_SMTP_FROM=noreply@kohakuhub.local
-      - KOHAKU_HUB_SMTP_TLS=true
+      - CN_MODEL_HUB_SMTP_ENABLED=false
+      - CN_MODEL_HUB_SMTP_HOST=smtp.gmail.com
+      - CN_MODEL_HUB_SMTP_PORT=587
+      - CN_MODEL_HUB_SMTP_USERNAME=
+      - CN_MODEL_HUB_SMTP_PASSWORD=
+      - CN_MODEL_HUB_SMTP_FROM=noreply@cn_model_hub.local
+      - CN_MODEL_HUB_SMTP_TLS=true
 
       ## ===== Storage Quota Configuration (Optional) =====
-      - KOHAKU_HUB_DEFAULT_USER_PRIVATE_QUOTA_BYTES=10_000_000
-      - KOHAKU_HUB_DEFAULT_USER_PUBLIC_QUOTA_BYTES=100_000_000
-      - KOHAKU_HUB_DEFAULT_ORG_PRIVATE_QUOTA_BYTES=10_000_000
-      - KOHAKU_HUB_DEFAULT_ORG_PUBLIC_QUOTA_BYTES=100_000_000{garage_config_section}
+      - CN_MODEL_HUB_DEFAULT_USER_PRIVATE_QUOTA_BYTES=10_000_000
+      - CN_MODEL_HUB_DEFAULT_USER_PUBLIC_QUOTA_BYTES=100_000_000
+      - CN_MODEL_HUB_DEFAULT_ORG_PRIVATE_QUOTA_BYTES=10_000_000
+      - CN_MODEL_HUB_DEFAULT_ORG_PUBLIC_QUOTA_BYTES=100_000_000
+
+      ## ===== Smart Assistant Configuration =====
+      - DEEPSEEK_API_KEY=${{DEEPSEEK_API_KEY:-}}
+      - CN_MODEL_HUB_ASSISTANT_LLM_MODEL=${{CN_MODEL_HUB_ASSISTANT_LLM_MODEL:-deepseek-v4-flash}}
+      - CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL=${{CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL:-https://api.deepseek.com}}
+      - CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL=${{CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}}
+      - CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED=${{CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED:-true}}{garage_config_section}
     volumes:
       - ./hub-meta/hub-api:/hub-api-creds
 {networks_str}"""
@@ -405,8 +412,8 @@ def generate_hub_ui_service() -> str:
     ports:
       - "28080:80" # Public web interface
     volumes:
-      - ./src/kohaku-hub-ui/dist:/usr/share/nginx/html
-      - ./src/kohaku-hub-admin/dist:/usr/share/nginx/html-admin
+      - ./src/cn-model-hub-ui/dist:/usr/share/nginx/html
+      - ./src/cn-model-hub-admin/dist:/usr/share/nginx/html-admin
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - hub-api
@@ -432,8 +439,8 @@ def generate_docker_compose(config: dict) -> str:
     if config["postgres_builtin"]:
         services.append(generate_postgres_service(config))
 
-    content = """# docker-compose.yml - KohakuHub Configuration
-# Generated by KohakuHub docker-compose generator
+    content = """# docker-compose.yml - cn_model_hub Configuration
+# Generated by cn_model_hub docker-compose generator
 # Customize for your deployment
 
 services:
@@ -471,12 +478,12 @@ def load_config_file(config_path: Path) -> dict:
         config["postgres_port"] = pg.getint("port", fallback=5432)
         config["postgres_user"] = pg.get("user", fallback="hub")
         config["postgres_password"] = pg.get("password", fallback="hubpass")
-        config["postgres_db"] = pg.get("database", fallback="kohakuhub")
+        config["postgres_db"] = pg.get("database", fallback="cn_model_hub")
     else:
         config["postgres_builtin"] = True
         config["postgres_user"] = "hub"
         config["postgres_password"] = "hubpass"
-        config["postgres_db"] = "kohakuhub"
+        config["postgres_db"] = "cn_model_hub"
         config["postgres_host"] = "postgres"
         config["postgres_port"] = 5432
 
@@ -576,9 +583,9 @@ def load_config_file(config_path: Path) -> dict:
 
 def generate_config_template(output_path: Path):
     """Generate a template configuration file."""
-    template = """# KohakuHub Configuration Template
+    template = """# cn_model_hub Configuration Template
 # Use this file to automate docker-compose.yml generation
-# Usage: python scripts/generate_docker_compose.py --config kohakuhub.conf
+# Usage: python scripts/generate_docker_compose.py --config cn_model_hub.conf
 
 [postgresql]
 # Use built-in PostgreSQL container (true) or external server (false)
@@ -591,7 +598,7 @@ builtin = true
 # PostgreSQL credentials
 user = hub
 password = hubpass
-database = kohakuhub
+database = cn_model_hub
 
 [lakefs]
 # Use PostgreSQL for LakeFS (true) or SQLite (false)
@@ -673,7 +680,7 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
             # Extract environment variables
             for line in content.split("\n"):
                 match = re.match(
-                    r"\s*- (KOHAKU_HUB_\w+)=(.+?)(?:\s+#.*)?$", line.strip()
+                    r"\s*- (CN_MODEL_HUB_\w+)=(.+?)(?:\s+#.*)?$", line.strip()
                 )
                 if match:
                     key, value = match.groups()
@@ -716,12 +723,12 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
 
     # PostgreSQL Configuration
     print("--- PostgreSQL Configuration ---")
-    config["postgres_builtin"] = get_existing("KOHAKU_HUB_DB_BACKEND") != "sqlite"
+    config["postgres_builtin"] = get_existing("CN_MODEL_HUB_DB_BACKEND") != "sqlite"
     print(f"Using: {'Built-in PostgreSQL' if config['postgres_builtin'] else 'SQLite'}")
 
     if config["postgres_builtin"]:
         # Parse DATABASE_URL
-        db_url = get_existing("KOHAKU_HUB_DATABASE_URL", "app.database_url")
+        db_url = get_existing("CN_MODEL_HUB_DATABASE_URL", "app.database_url")
         if isinstance(db_url, str) and db_url.startswith("postgresql://"):
             # Parse: postgresql://user:pass@host:port/db
             match = re.match(r"postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)", db_url)
@@ -740,13 +747,13 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
                 config["postgres_password"] = "hubpass"
                 config["postgres_host"] = "postgres"
                 config["postgres_port"] = 5432
-                config["postgres_db"] = "kohakuhub"
+                config["postgres_db"] = "cn_model_hub"
         else:
             config["postgres_user"] = "hub"
             config["postgres_password"] = "hubpass"
             config["postgres_host"] = "postgres"
             config["postgres_port"] = 5432
-            config["postgres_db"] = "kohakuhub"
+            config["postgres_db"] = "cn_model_hub"
     else:
         config["postgres_user"] = ""
         config["postgres_password"] = ""
@@ -756,11 +763,11 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
 
     # LakeFS Configuration
     config["lakefs_use_postgres"] = True  # Most installations use postgres
-    config["lakefs_db"] = "kohakuhub_lakefs"
+    config["lakefs_db"] = "cn_model_hub_lakefs"
 
     # S3 Configuration
     print("\n--- S3 Configuration ---")
-    s3_endpoint = get_existing("KOHAKU_HUB_S3_ENDPOINT", "s3.endpoint")
+    s3_endpoint = get_existing("CN_MODEL_HUB_S3_ENDPOINT", "s3.endpoint")
     if isinstance(s3_endpoint, dict):
         s3_endpoint = None
 
@@ -784,16 +791,16 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
         f"Using: {'Built-in ' + config['s3_provider'].title() if config['s3_builtin'] else 'External S3'}"
     )
 
-    config["s3_access_key"] = get_existing("KOHAKU_HUB_S3_ACCESS_KEY", "s3.access_key")
+    config["s3_access_key"] = get_existing("CN_MODEL_HUB_S3_ACCESS_KEY", "s3.access_key")
     if isinstance(config["s3_access_key"], dict):
         config["s3_access_key"] = None
     config["s3_access_key"] = config["s3_access_key"] or generate_secret(24)
 
-    config["s3_secret_key"] = get_existing("KOHAKU_HUB_S3_SECRET_KEY", "s3.secret_key")
+    config["s3_secret_key"] = get_existing("CN_MODEL_HUB_S3_SECRET_KEY", "s3.secret_key")
     if isinstance(config["s3_secret_key"], dict):
         config["s3_secret_key"] = None
     config["s3_secret_key"] = config["s3_secret_key"] or generate_secret(48)
-    config["s3_bucket"] = get_existing("KOHAKU_HUB_S3_BUCKET", "s3.bucket")
+    config["s3_bucket"] = get_existing("CN_MODEL_HUB_S3_BUCKET", "s3.bucket")
     if isinstance(config["s3_bucket"], dict):
         config["s3_bucket"] = None
     config["s3_bucket"] = config["s3_bucket"] or "hub-storage"
@@ -808,7 +815,7 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
     config["s3_endpoint"] = s3_endpoint
 
     # Set region based on provider
-    existing_region = get_existing("KOHAKU_HUB_S3_REGION", "s3.region")
+    existing_region = get_existing("CN_MODEL_HUB_S3_REGION", "s3.region")
     if isinstance(existing_region, dict):
         existing_region = None
     if existing_region:
@@ -820,7 +827,7 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
 
     # Set signature version
     existing_sig = get_existing(
-        "KOHAKU_HUB_S3_SIGNATURE_VERSION", "s3.signature_version"
+        "CN_MODEL_HUB_S3_SIGNATURE_VERSION", "s3.signature_version"
     )
     if isinstance(existing_sig, dict):
         existing_sig = None
@@ -834,19 +841,19 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
     # Security Configuration
     print("\n--- Security Configuration ---")
     config["session_secret"] = get_existing(
-        "KOHAKU_HUB_SESSION_SECRET", "auth.session_secret"
+        "CN_MODEL_HUB_SESSION_SECRET", "auth.session_secret"
     )
     if isinstance(config["session_secret"], dict):
         config["session_secret"] = None
 
     config["admin_secret"] = get_existing(
-        "KOHAKU_HUB_ADMIN_SECRET_TOKEN", "admin.secret_token"
+        "CN_MODEL_HUB_ADMIN_SECRET_TOKEN", "admin.secret_token"
     )
     if isinstance(config["admin_secret"], dict):
         config["admin_secret"] = None
 
     # NEW FIELD: database_key
-    config["database_key"] = get_existing("KOHAKU_HUB_DATABASE_KEY", "app.database_key")
+    config["database_key"] = get_existing("CN_MODEL_HUB_DATABASE_KEY", "app.database_key")
     if isinstance(config["database_key"], dict):
         config["database_key"] = None
     if not config["database_key"]:
@@ -917,9 +924,14 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
         update_docker_compose_inplace(
             docker_compose_path,
             {
-                "KOHAKU_HUB_DATABASE_KEY": config["database_key"],
+                "CN_MODEL_HUB_DATABASE_KEY": config["database_key"],
                 "LAKEFS_ENCRYPT_SECRET_KEY": config["lakefs_encrypt_key"],
                 "LAKEFS_BLOCKSTORE_S3_BUCKET": config["s3_bucket"],
+                "DEEPSEEK_API_KEY": "${DEEPSEEK_API_KEY:-}",
+                "CN_MODEL_HUB_ASSISTANT_LLM_MODEL": "${CN_MODEL_HUB_ASSISTANT_LLM_MODEL:-deepseek-v4-flash}",
+                "CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL": "${CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL:-https://api.deepseek.com}",
+                "CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL": "${CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}",
+                "CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED": "${CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED:-true}",
             },
         )
 
@@ -1066,13 +1078,13 @@ def main():
     """Main function."""
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description="Generate docker-compose.yml for KohakuHub"
+        description="Generate docker-compose.yml for cn_model_hub"
     )
     parser.add_argument(
         "--config",
         "-c",
         type=Path,
-        help="Path to configuration file (kohakuhub.conf)",
+        help="Path to configuration file (cn_model_hub.conf)",
     )
     parser.add_argument(
         "--generate-config",
@@ -1083,12 +1095,12 @@ def main():
 
     # Generate template if requested
     if args.generate_config:
-        template_path = Path(__file__).parent.parent / "kohakuhub.conf"
+        template_path = Path(__file__).parent.parent / "cn_model_hub.conf"
         generate_config_template(template_path)
         return
 
     print("=" * 60)
-    print("KohakuHub Docker Compose Generator")
+    print("cn_model_hub Docker Compose Generator")
     print("=" * 60)
     print()
 
@@ -1181,7 +1193,7 @@ def interactive_config() -> dict:
             "PostgreSQL password", default="hubpass"
         )
         config["postgres_db"] = ask_string(
-            "PostgreSQL database name for hub-api", default="kohakuhub"
+            "PostgreSQL database name for hub-api", default="cn_model_hub"
         )
         config["postgres_host"] = "postgres"
         config["postgres_port"] = 5432
@@ -1191,7 +1203,7 @@ def interactive_config() -> dict:
         config["postgres_user"] = ask_string("PostgreSQL username")
         config["postgres_password"] = ask_string("PostgreSQL password")
         config["postgres_db"] = ask_string(
-            "PostgreSQL database name for hub-api", default="kohakuhub"
+            "PostgreSQL database name for hub-api", default="cn_model_hub"
         )
 
     # LakeFS database configuration
@@ -1369,8 +1381,8 @@ def generate_config_toml(config: dict) -> str:
         s3_endpoint_public = config["s3_endpoint"]
         s3_region = config.get("s3_region", "us-east-1")
 
-    toml_content = f"""# KohakuHub Configuration File (TOML)
-# Generated by KohakuHub docker-compose generator
+    toml_content = f"""# cn_model_hub Configuration File (TOML)
+# Generated by cn_model_hub docker-compose generator
 # Use this for local development server
 
 [s3]
@@ -1402,7 +1414,7 @@ host = "smtp.gmail.com"
 port = 587
 username = ""
 password = ""
-from_email = "noreply@kohakuhub.local"
+from_email = "noreply@cn_model_hub.local"
 use_tls = true
 
 [auth]
@@ -1437,7 +1449,7 @@ database_url = "{db_url}"
 database_key = "{config["database_key"]}"  # For encrypting external fallback tokens
 # LFS Configuration (sizes in decimal: 1MB = 1,000,000 bytes)
 lfs_threshold_bytes = 5_000_000  # 5MB - files larger use LFS
-lfs_multipart_threshold_bytes = 100_000_000  # 100MB - files larger use multipart upload
+lfs_multipart_threshold_bytes = 2_000_000_000  # 2GB - files larger use multipart upload
 lfs_multipart_chunk_size_bytes = 50_000_000  # 50MB - size of each part (min 5MB except last)
 lfs_keep_versions = 5  # Keep last K versions of each LFS file
 lfs_auto_gc = true  # Automatically delete old LFS objects on commit
@@ -1446,7 +1458,7 @@ download_time_bucket_seconds = 900  # 15 minutes - session deduplication window
 download_session_cleanup_threshold = 100  # Trigger cleanup when sessions > this
 download_keep_sessions_days = 30  # Keep sessions from last N days
 debug_log_payloads = false
-site_name = "KohakuHub"
+site_name = "cn_model_hub"
 """
 
     return toml_content
@@ -1547,7 +1559,7 @@ def generate_and_write_files(config: dict):
     )
     step_num += 1
     print(
-        f"{step_num}. Run dev server: uvicorn kohakuhub.main:app --reload --port 48888"
+        f"{step_num}. Run dev server: uvicorn cn_model_hub.main:app --reload --port 48888"
     )
     step_num += 1
     print(f"{step_num}. Access at: http://localhost:48888")

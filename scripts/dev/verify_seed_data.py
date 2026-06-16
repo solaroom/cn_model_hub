@@ -17,9 +17,9 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from kohakuhub.config import cfg
-from kohakuhub.main import app
-from kohakuhub.utils.s3 import init_storage
+from cn_model_hub.config import cfg
+from cn_model_hub.main import app
+from cn_model_hub.utils.s3 import init_storage
 
 MANIFEST_PATH = ROOT_DIR / "hub-meta" / "dev" / "demo-seed-manifest.json"
 INTERNAL_BASE_URL = (

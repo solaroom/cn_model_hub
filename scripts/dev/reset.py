@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pure local helper for clearing KohakuHub dev state."""
+"""Pure local helper for clearing cn_model_hub dev state."""
 
 from __future__ import annotations
 
@@ -13,12 +13,12 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(1, str(SRC_DIR))
 
-from kohakuhub.api.fallback.cache import get_cache
-from kohakuhub.config import cfg
-from kohakuhub.db import FallbackSource, Invitation, Repository, User, db, init_db
-from kohakuhub.logger import get_logger
-from kohakuhub.utils.lakefs import get_lakefs_client
-from kohakuhub.utils.s3 import delete_objects_with_prefix, init_storage
+from cn_model_hub.api.fallback.cache import get_cache
+from cn_model_hub.config import cfg
+from cn_model_hub.db import FallbackSource, Invitation, Repository, User, db, init_db
+from cn_model_hub.logger import get_logger
+from cn_model_hub.utils.lakefs import get_lakefs_client
+from cn_model_hub.utils.s3 import delete_objects_with_prefix, init_storage
 
 logger = get_logger("LOCAL_DEV_RESET")
 

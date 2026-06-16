@@ -26,7 +26,7 @@ import requests
 
 KHUB = "http://127.0.0.1:48888"
 SEED_USER = "mai_lin"
-SEED_PWD = "KohakuDev123!"
+SEED_PWD = "CnModelHub123!"
 
 
 def _hf_error(name: str):

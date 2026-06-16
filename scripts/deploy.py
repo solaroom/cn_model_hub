@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy KohakuHub using Docker Compose.
+"""Deploy cn_model_hub using Docker Compose.
 
 This script:
 1. Installs frontend workspace dependencies with pnpm
@@ -43,7 +43,7 @@ def main():
     """Main function."""
     root_dir = Path(__file__).parent.parent
 
-    print("\nKohakuHub Deployment")
+    print("\ncn_model_hub Deployment")
     print("=" * 60)
 
     # Step 1: Install frontend workspace dependencies
@@ -60,7 +60,7 @@ def main():
     )
 
     print("\n" + "=" * 60)
-    print("[OK] KohakuHub deployed successfully!")
+    print("[OK] cn_model_hub deployed successfully!")
     print("=" * 60)
     print("\nAccess Points:")
     print("   Main UI:    http://localhost:28080")

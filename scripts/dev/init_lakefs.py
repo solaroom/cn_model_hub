@@ -47,8 +47,8 @@ def write_credentials(path: Path, access_key: str, secret_key: str) -> None:
     path.write_text(
         "\n".join(
             [
-                f"KOHAKU_HUB_LAKEFS_ACCESS_KEY={access_key}",
-                f"KOHAKU_HUB_LAKEFS_SECRET_KEY={secret_key}",
+                f"CN_MODEL_HUB_LAKEFS_ACCESS_KEY={access_key}",
+                f"CN_MODEL_HUB_LAKEFS_SECRET_KEY={secret_key}",
                 "",
             ]
         ),
@@ -76,8 +76,8 @@ def initialize_lakefs(
     wait_for_lakefs(endpoint, timeout_seconds)
 
     existing = read_credentials(credentials_file)
-    if existing.get("KOHAKU_HUB_LAKEFS_ACCESS_KEY") and existing.get(
-        "KOHAKU_HUB_LAKEFS_SECRET_KEY"
+    if existing.get("CN_MODEL_HUB_LAKEFS_ACCESS_KEY") and existing.get(
+        "CN_MODEL_HUB_LAKEFS_SECRET_KEY"
     ):
         print(f"LakeFS credentials already exist: {credentials_file}")
         return 0
@@ -114,7 +114,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--endpoint",
-        default=os.environ.get("KOHAKU_HUB_LAKEFS_ENDPOINT", "http://127.0.0.1:28000"),
+        default=os.environ.get("CN_MODEL_HUB_LAKEFS_ENDPOINT", "http://127.0.0.1:28000"),
         help="LakeFS endpoint",
     )
     parser.add_argument(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create deterministic local demo data through KohakuHub's API surface."""
+"""Create deterministic local demo data through cn_model_hub's API surface."""
 
 from __future__ import annotations
 
@@ -35,11 +35,11 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from kohakuhub.config import cfg
-from kohakuhub.main import app
-from kohakuhub.utils.s3 import init_storage
+from cn_model_hub.config import cfg
+from cn_model_hub.main import app
+from cn_model_hub.utils.s3 import init_storage
 
-DEFAULT_PASSWORD = "KohakuDev123!"
+DEFAULT_PASSWORD = "CnModelHub123!"
 PRIMARY_USERNAME = "mai_lin"
 MANIFEST_PATH = ROOT_DIR / "hub-meta" / "dev" / "demo-seed-manifest.json"
 INTERNAL_BASE_URL = (
@@ -192,13 +192,13 @@ SEED_ASSET_CACHE_DIR = ROOT_DIR / "hub-meta" / "cache" / "seed-assets"
 ACCOUNTS: tuple[AccountSeed, ...] = (
     AccountSeed(
         username="mai_lin",
-        email="mai.lin@kohakuhub.dev",
+        email="mai.lin@cn_model_hub.dev",
         full_name="Mai Lin",
         bio=(
             "Product-minded ML engineer focused on reproducible dataset QA, "
             "small-model packaging, and local debugging workflows."
         ),
-        website="https://kohakuhub.local/mai-lin",
+        website="https://cn_model_hub.local/mai-lin",
         social_media={
             "github": "mai-lin-labs",
             "huggingface": "mai-lin-labs",
@@ -209,13 +209,13 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="leo_park",
-        email="leo.park@kohakuhub.dev",
+        email="leo.park@cn_model_hub.dev",
         full_name="Leo Park",
         bio=(
             "Frontend-heavy engineer who keeps repo demos honest with browser "
             "smoke tests and hand-curated example data."
         ),
-        website="https://kohakuhub.local/leo-park",
+        website="https://cn_model_hub.local/leo-park",
         social_media={
             "github": "leo-park-dev",
             "threads": "leo.park.dev",
@@ -225,13 +225,13 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="sara_chen",
-        email="sara.chen@kohakuhub.dev",
+        email="sara.chen@cn_model_hub.dev",
         full_name="Sara Chen",
         bio=(
             "Annotation lead for invoice, receipt, and layout-heavy datasets. "
             "Prefers clean schemas over magical post-processing."
         ),
-        website="https://kohakuhub.local/sara-chen",
+        website="https://cn_model_hub.local/sara-chen",
         social_media={
             "github": "sara-chen-data",
             "huggingface": "sara-chen-data",
@@ -241,13 +241,13 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="noah_kim",
-        email="noah.kim@kohakuhub.dev",
+        email="noah.kim@cn_model_hub.dev",
         full_name="Noah Kim",
         bio=(
             "Ships compact vision models for harbor monitoring, segmentation, "
             "and camera-side smoke testing."
         ),
-        website="https://kohakuhub.local/noah-kim",
+        website="https://cn_model_hub.local/noah-kim",
         social_media={
             "github": "noah-kim-vision",
             "twitter_x": "noahkimvision",
@@ -257,13 +257,13 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="ivy_ops",
-        email="ivy.ops@kohakuhub.dev",
+        email="ivy.ops@cn_model_hub.dev",
         full_name="Ivy Ops",
         bio=(
             "Release and infra support. Uses stable, boring fixtures so bug "
             "reports stay reproducible."
         ),
-        website="https://kohakuhub.local/ivy-ops",
+        website="https://cn_model_hub.local/ivy-ops",
         social_media={
             "github": "ivy-ops",
         },
@@ -283,7 +283,7 @@ ORGANIZATIONS: tuple[OrganizationSeed, ...] = (
             "Aurora Labs curates multilingual OCR assets for receipts, forms, "
             "and customer-service automation."
         ),
-        website="https://aurora-labs.kohakuhub.local",
+        website="https://aurora-labs.cn_model_hub.local",
         social_media={
             "github": "aurora-labs",
             "huggingface": "aurora-labs",
@@ -307,7 +307,7 @@ ORGANIZATIONS: tuple[OrganizationSeed, ...] = (
             "Harbor Vision maintains compact segmentation and inspection models "
             "for edge-friendly marine operations."
         ),
-        website="https://harbor-vision.kohakuhub.local",
+        website="https://harbor-vision.cn_model_hub.local",
         social_media={
             "github": "harbor-vision",
             "twitter_x": "harborvision",
@@ -426,10 +426,10 @@ def build_scale_accounts() -> tuple[AccountSeed, ...]:
     return tuple(
         AccountSeed(
             username=username,
-            email=f"{username.replace('_', '.')}@kohakuhub.dev",
+            email=f"{username.replace('_', '.')}@cn_model_hub.dev",
             full_name=full_name,
             bio=bio,
-            website=f"https://kohakuhub.local/{username.replace('_', '-')}",
+            website=f"https://cn_model_hub.local/{username.replace('_', '-')}",
             social_media={
                 "github": github_handle,
                 "huggingface": github_handle,
@@ -476,7 +476,7 @@ ORGANIZATIONS = ORGANIZATIONS + (
             "Open Media Lab maintains reproducible multimodal assets for UI browsing, "
             "download tracking, metadata QA, and repository management demos."
         ),
-        website="https://open-media-lab.kohakuhub.local",
+        website="https://open-media-lab.cn_model_hub.local",
         social_media={
             "github": "open-media-lab",
             "huggingface": "open-media-lab",
@@ -974,7 +974,7 @@ def fetch_remote_asset(asset: RemoteAsset) -> bytes:
     response = requests.get(
         asset.url,
         timeout=180,
-        headers={"User-Agent": "KohakuHubLocalSeed/1.0"},
+        headers={"User-Agent": "cn_model_hubLocalSeed/1.0"},
     )
     response.raise_for_status()
     data = response.content
@@ -1094,7 +1094,7 @@ def make_indexed_tar_bundle(
             handle.addfile(info, io.BytesIO(content))
 
     tar_bytes = tar_buffer.getvalue()
-    with tempfile.TemporaryDirectory(prefix="kohakuhub-seed-tar-") as tmp_dir:
+    with tempfile.TemporaryDirectory(prefix="cn_model_hub-seed-tar-") as tmp_dir:
         tar_path = Path(tmp_dir) / f"{label}.tar"
         tar_path.write_bytes(tar_bytes)
         index_info = hf_index.tar_get_index_info(str(tar_path), silent=True)
@@ -3580,7 +3580,7 @@ def build_tree_expand_stress_seeds() -> tuple[RepoSeed, ...]:
     a hash-based byte stream so the output is byte-identical across runs (no
     `random` module — see AGENTS §2 "no random seed fixtures").
 
-    Note: `copyFile` is intentionally not exercised here. KohakuHub's current
+    Note: `copyFile` is intentionally not exercised here. cn_model_hub's current
     `process_copy_file` re-links the source's internal LakeFS physical address,
     which LakeFS 1.80 rejects with "address is not signed: link address invalid"
     for non-LFS sources (verified live). That's a pre-existing backend limitation
@@ -4186,7 +4186,7 @@ def build_pr77_demo_repo_seeds() -> tuple[RepoSeed, ...]:
         - Local-namespace-priority + EntryNotFound/RevisionNotFound short-circuit:
           `openai-community/gpt2`, `bigscience/bloom`, `meta-llama/Llama-2-7b`.
         - All chain-level decisions are exhaustively unit-tested in
-          `test/kohakuhub/api/fallback/test_chain_enumeration.py` (4368 cases).
+          `test/cn_model_hub/api/fallback/test_chain_enumeration.py` (4368 cases).
         """
     )
 
@@ -4582,8 +4582,8 @@ def plant_seed_tokens() -> None:
     """
     from datetime import datetime, timedelta, timezone
 
-    from kohakuhub.auth.utils import hash_token
-    from kohakuhub.db import Token, User
+    from cn_model_hub.auth.utils import hash_token
+    from cn_model_hub.db import Token, User
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     for spec in SEED_TOKEN_PLANTS:
@@ -4624,7 +4624,7 @@ async def plant_seed_ssh_keys(
     """
     from datetime import datetime, timedelta, timezone
 
-    from kohakuhub.db import SSHKey, User
+    from cn_model_hub.db import SSHKey, User
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     for spec in SEED_SSH_KEY_PLANTS:

@@ -4,11 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env.dev"
 
-NETWORK_NAME="kohakuhub-dev"
-POSTGRES_CONTAINER="kohakuhub-dev-postgres"
-MINIO_CONTAINER="kohakuhub-dev-minio"
-LAKEFS_CONTAINER="kohakuhub-dev-lakefs"
-VALKEY_CONTAINER="kohakuhub-dev-valkey"
+NETWORK_NAME="cn_model_hub-dev"
+POSTGRES_CONTAINER="cn_model_hub-dev-postgres"
+MINIO_CONTAINER="cn_model_hub-dev-minio"
+LAKEFS_CONTAINER="cn_model_hub-dev-lakefs"
+VALKEY_CONTAINER="cn_model_hub-dev-valkey"
 
 POSTGRES_DATA_DIR="${ROOT_DIR}/hub-meta/dev/postgres-data"
 MINIO_DATA_DIR="${ROOT_DIR}/hub-meta/dev/minio-data"
@@ -26,17 +26,17 @@ fi
 
 : "${DEV_POSTGRES_USER:=hub_dev}"
 : "${DEV_POSTGRES_PASSWORD:=hub_dev_password}"
-: "${DEV_POSTGRES_DB:=kohakuhub_dev}"
+: "${DEV_POSTGRES_DB:=cn_model_hub_dev}"
 : "${DEV_MINIO_ROOT_USER:=minioadmin}"
 : "${DEV_MINIO_ROOT_PASSWORD:=minioadmin}"
 # MinIO must advertise CORS so the SPA can do cross-origin Range reads on
 # presigned /resolve/ targets for the pure-client preview (issue #27).
 : "${DEV_MINIO_CORS_ALLOW_ORIGIN:=*}"
 : "${DEV_LAKEFS_ENCRYPT_SECRET_KEY:=dev-lakefs-encrypt-key-32chars}"
-: "${KOHAKU_HUB_S3_BUCKET:=hub-storage}"
-: "${KOHAKU_HUB_S3_REGION:=us-east-1}"
-: "${KOHAKU_HUB_S3_ACCESS_KEY:=${DEV_MINIO_ROOT_USER}}"
-: "${KOHAKU_HUB_S3_SECRET_KEY:=${DEV_MINIO_ROOT_PASSWORD}}"
+: "${CN_MODEL_HUB_S3_BUCKET:=hub-storage}"
+: "${CN_MODEL_HUB_S3_REGION:=us-east-1}"
+: "${CN_MODEL_HUB_S3_ACCESS_KEY:=${DEV_MINIO_ROOT_USER}}"
+: "${CN_MODEL_HUB_S3_SECRET_KEY:=${DEV_MINIO_ROOT_PASSWORD}}"
 
 container_exists() {
   docker ps -a --format '{{.Names}}' | grep -Fxq "$1"
@@ -139,11 +139,11 @@ ensure_lakefs() {
     -e LAKEFS_DATABASE_LOCAL_PATH=/var/lakefs/data/metadata.db \
     -e LAKEFS_BLOCKSTORE_TYPE=s3 \
     -e "LAKEFS_BLOCKSTORE_S3_ENDPOINT=http://${MINIO_CONTAINER}:9000" \
-    -e "LAKEFS_BLOCKSTORE_S3_BUCKET=${KOHAKU_HUB_S3_BUCKET}" \
+    -e "LAKEFS_BLOCKSTORE_S3_BUCKET=${CN_MODEL_HUB_S3_BUCKET}" \
     -e LAKEFS_BLOCKSTORE_S3_FORCE_PATH_STYLE=true \
-    -e "LAKEFS_BLOCKSTORE_S3_CREDENTIALS_ACCESS_KEY_ID=${KOHAKU_HUB_S3_ACCESS_KEY}" \
-    -e "LAKEFS_BLOCKSTORE_S3_CREDENTIALS_SECRET_ACCESS_KEY=${KOHAKU_HUB_S3_SECRET_KEY}" \
-    -e "LAKEFS_BLOCKSTORE_S3_REGION=${KOHAKU_HUB_S3_REGION}" \
+    -e "LAKEFS_BLOCKSTORE_S3_CREDENTIALS_ACCESS_KEY_ID=${CN_MODEL_HUB_S3_ACCESS_KEY}" \
+    -e "LAKEFS_BLOCKSTORE_S3_CREDENTIALS_SECRET_ACCESS_KEY=${CN_MODEL_HUB_S3_SECRET_KEY}" \
+    -e "LAKEFS_BLOCKSTORE_S3_REGION=${CN_MODEL_HUB_S3_REGION}" \
     -e "LAKEFS_AUTH_ENCRYPT_SECRET_KEY=${DEV_LAKEFS_ENCRYPT_SECRET_KEY}" \
     -e LAKEFS_LOGGING_FORMAT=text \
     -e LAKEFS_LISTEN_ADDRESS=0.0.0.0:28000 \

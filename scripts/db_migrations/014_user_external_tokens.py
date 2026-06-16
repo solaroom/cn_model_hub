@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 # Add db_migrations to path (for _migration_utils)
 sys.path.insert(0, os.path.dirname(__file__))
 
-from kohakuhub.config import cfg
-from kohakuhub.db import UserExternalToken, db
+from cn_model_hub.config import cfg
+from cn_model_hub.db import UserExternalToken, db
 from _migration_utils import check_table_exists, should_skip_due_to_future_migrations
 
 MIGRATION_NUMBER = 14

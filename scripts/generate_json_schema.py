@@ -2,11 +2,11 @@ import sys
 import json
 from pathlib import Path
 
-# Add src to path so we can import kohakuhub
+# Add src to path so we can import cn_model_hub
 src_path = Path(__file__).parent.parent / "src"
 sys.path.append(str(src_path))
 
-from kohakuhub.config import Config
+from cn_model_hub.config import Config
 
 schema =  Config.model_json_schema()
 

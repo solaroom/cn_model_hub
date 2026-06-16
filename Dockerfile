@@ -2,7 +2,7 @@ FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV VIRTUAL_ENV=/opt/kohakuhub-venv
+ENV VIRTUAL_ENV=/opt/cn_model_hub-venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install uv
@@ -12,12 +12,14 @@ WORKDIR /app
 
 COPY ./pyproject.toml .
 COPY ./README.md .
-RUN mkdir -p /app/src/kohakuhub
-RUN echo "" > /app/src/kohakuhub/__init__.py
+RUN mkdir -p /app/src/cn_model_hub
+RUN echo "" > /app/src/cn_model_hub/__init__.py
 RUN uv venv --seed "$VIRTUAL_ENV" && uv pip install -e .
 
-COPY ./src/kohakuhub ./src/kohakuhub
+COPY ./src/cn_model_hub ./src/cn_model_hub
 COPY ./scripts ./scripts
+COPY ./docs ./docs
+COPY ./examples/datasets/c-eval/quick_eval ./examples/datasets/c-eval/quick_eval
 COPY ./docker/startup.py /app/startup.py
 RUN chmod +x /app/startup.py
 

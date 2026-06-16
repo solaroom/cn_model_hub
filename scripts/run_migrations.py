@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Main migration runner for KohakuHub database migrations.
+Main migration runner for cn_model_hub database migrations.
 
 This script automatically discovers and runs all migration scripts in the
 db_migrations/ directory in numerical order (001, 002, 003, etc.).
@@ -24,8 +24,8 @@ SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR.parent / "src"))
 
 # Import after path setup
-from kohakuhub.db import db, init_db
-from kohakuhub.config import cfg
+from cn_model_hub.db import db, init_db
+from cn_model_hub.config import cfg
 
 
 def discover_migrations():
@@ -104,7 +104,7 @@ def is_database_initialized():
 def run_migrations():
     """Run all pending migrations."""
     print("=" * 70)
-    print("KohakuHub Database Migrations")
+    print("cn_model_hub Database Migrations")
     print("=" * 70)
     print(f"Database backend: {cfg.app.db_backend}")
     print(f"Database URL: {cfg.app.database_url}")

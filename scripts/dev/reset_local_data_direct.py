@@ -23,7 +23,7 @@ async def main() -> int:
         print(f"Local reset failed: {exc}", file=sys.stderr)
         return 1
 
-    print("Local KohakuHub dev data has been cleared.")
+    print("Local cn_model_hub dev data has been cleared.")
     print(json.dumps(payload.get("summary", {}), indent=2, sort_keys=True))
 
     warnings = payload.get("warnings") or []

@@ -7,20 +7,20 @@ truth: anyone needing to refresh or re-verify the fixtures can run it and
 diff the output.
 
 Output:
-- ``test/kohaku-hub-ui/fixtures/previews/tiny.safetensors`` — valid
+- ``test/cn-model-hub-ui/fixtures/previews/tiny.safetensors`` — valid
   safetensors file with three small tensors in three dtypes and a
   non-empty ``__metadata__`` block. Produced via ``safetensors.numpy``
   so the wire format is byte-identical to what HuggingFace emits.
-- ``test/kohaku-hub-ui/fixtures/previews/tiny.parquet`` — valid parquet
+- ``test/cn-model-hub-ui/fixtures/previews/tiny.parquet`` — valid parquet
   file with ~100 rows and four columns (string, int64, float32, bool).
   Produced via ``pyarrow.parquet`` so the footer/schema shape matches
   anything the HuggingFace datasets-server would serve for a comparable
   upload.
-- ``test/kohaku-hub-ui/fixtures/previews/with_exif_thumb.jpg`` — JPEG
+- ``test/cn-model-hub-ui/fixtures/previews/with_exif_thumb.jpg`` — JPEG
   whose APP1 EXIF segment carries an embedded thumbnail JPEG. Used to
   exercise the front-end's "Range-read 64 KB → extract EXIF thumbnail
   → bypass the full image" path inside the indexed-tar listing.
-- ``test/kohaku-hub-ui/fixtures/previews/no_exif_thumb.jpg`` — same
+- ``test/cn-model-hub-ui/fixtures/previews/no_exif_thumb.jpg`` — same
   visual content, EXIF stripped. Pins the negative branch (parser
   returns null → caller falls through to full-decode strategy).
 """
@@ -38,7 +38,7 @@ from PIL import Image
 from safetensors.numpy import save as save_safetensors
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-OUT_DIR = REPO_ROOT / "test" / "kohaku-hub-ui" / "fixtures" / "previews"
+OUT_DIR = REPO_ROOT / "test" / "cn-model-hub-ui" / "fixtures" / "previews"
 
 
 def build_safetensors() -> bytes:
@@ -50,7 +50,7 @@ def build_safetensors() -> bytes:
     }
     metadata = {
         "format": "pt",
-        "framework": "kohakuhub-fixture",
+        "framework": "cn_model_hub-fixture",
         "seed": "0",
     }
     return save_safetensors(tensors, metadata=metadata)
@@ -99,7 +99,7 @@ def _build_exif_with_thumbnail(thumbnail_bytes: bytes) -> bytes:
 
     # IFD0: one entry (ImageDescription) so the structure is non-empty.
     # Keep IFD0 minimal — what matters is the next-IFD pointer.
-    desc = b"kohaku\x00"
+    desc = b"cn_model\x00"
     tiff += struct.pack("<H", 1)           # entry count
     # tag 0x010E (ImageDescription), type 2 (ASCII), count, value/offset
     tiff += struct.pack("<HHI", 0x010E, 2, len(desc))

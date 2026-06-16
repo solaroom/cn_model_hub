@@ -59,8 +59,8 @@ def main():
     ]
 
     # Output directories
-    ui_public = script_dir.parent / "src" / "kohaku-hub-ui" / "public"
-    admin_public = script_dir.parent / "src" / "kohaku-hub-admin" / "public"
+    ui_public = script_dir.parent / "src" / "cn-model-hub-ui" / "public"
+    admin_public = script_dir.parent / "src" / "cn-model-hub-admin" / "public"
 
     print(f"Generating PNG favicons from {svg_path}...")
     print()

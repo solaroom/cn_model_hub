@@ -42,8 +42,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 # Add db_migrations to path (for _migration_utils)
 sys.path.insert(0, os.path.dirname(__file__))
 
-from kohakuhub.db import db
-from kohakuhub.config import cfg
+from cn_model_hub.db import db
+from cn_model_hub.config import cfg
 from _migration_utils import should_skip_due_to_future_migrations
 
 MIGRATION_NUMBER = 8
@@ -413,13 +413,13 @@ def migrate_postgres():
     print("")
 
     # Allow auto-confirmation via environment variable (for Docker/CI)
-    auto_confirm = os.environ.get("KOHAKU_HUB_AUTO_MIGRATE", "").lower() in (
+    auto_confirm = os.environ.get("CN_MODEL_HUB_AUTO_MIGRATE", "").lower() in (
         "true",
         "1",
         "yes",
     )
     if auto_confirm:
-        print("  Auto-confirmation enabled (KOHAKU_HUB_AUTO_MIGRATE=true)")
+        print("  Auto-confirmation enabled (CN_MODEL_HUB_AUTO_MIGRATE=true)")
         response = "yes"
     else:
         response = input("Type 'yes' to continue: ")
