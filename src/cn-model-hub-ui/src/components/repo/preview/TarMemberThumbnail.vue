@@ -82,7 +82,7 @@ const showThumbnail = computed(
     <img
       v-if="showThumbnail"
       :src="thumbUrl"
-      :alt="member.name"
+      :alt="成员.name"
       class="w-full h-full object-contain"
       loading="lazy"
       decoding="async"

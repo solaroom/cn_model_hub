@@ -2,14 +2,14 @@
 <template>
   <div class="container-main">
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-3xl font-bold">Organizations</h1>
+      <h1 class="text-3xl font-bold">组织</h1>
       <el-button
         v-if="authStore.isAuthenticated"
         type="primary"
         @click="router.push('/organizations/new')"
       >
         <div class="i-carbon-add mr-2" />
-        Create Organization
+        创建组织
       </el-button>
     </div>
 
@@ -17,7 +17,7 @@
     <div class="card mb-6">
       <el-input
         v-model="searchQuery"
-        placeholder="Search organizations..."
+        placeholder="搜索组织..."
         clearable
         class="max-w-md"
       >

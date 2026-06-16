@@ -21,7 +21,7 @@ const formattedResults = computed(() => {
 
 <template>
   <div class="card">
-    <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">Evaluation</h3>
+    <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">评测</h3>
     <div class="space-y-4">
       <div
         v-for="(result, idx) in formattedResults"

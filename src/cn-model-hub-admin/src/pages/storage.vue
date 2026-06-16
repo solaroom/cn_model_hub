@@ -214,14 +214,14 @@ onMounted(() => {
     <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Storage Browser
+          存储浏览器
         </h1>
         <el-button
           @click="loadObjects('')"
           :icon="'Refresh'"
           :loading="loading"
         >
-          Refresh
+          刷新
         </el-button>
       </div>
 
@@ -231,16 +231,16 @@ onMounted(() => {
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <div class="i-carbon-folder-open text-2xl text-blue-600" />
-              <span class="font-bold">Storage Explorer</span>
+              <span class="font-bold">存储资源管理器</span>
             </div>
             <div
               class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
             >
-              <span>{{ folderStructure.folders.length }} folders</span>
+              <span>{{ folderStructure.folders.length }} 文件夹</span>
               <span>•</span>
-              <span>{{ folderStructure.files.length }} files</span>
+              <span>{{ folderStructure.files.length }} 文件</span>
               <span>•</span>
-              <span>{{ objects.length }} total objects</span>
+              <span>{{ objects.length }} 对象总数</span>
             </div>
           </div>
         </template>
@@ -361,7 +361,7 @@ onMounted(() => {
                       text
                       @click="confirmDeleteObject(row.key)"
                     >
-                      Delete
+                      删除
                     </el-button>
                   </template>
                 </el-table-column>

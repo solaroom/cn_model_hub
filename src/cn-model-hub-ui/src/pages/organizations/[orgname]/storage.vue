@@ -8,7 +8,7 @@
           to="/"
           class="text-blue-600 dark:text-blue-400 hover:underline"
         >
-          Home
+          首页
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item>
@@ -16,7 +16,7 @@
           to="/organizations"
           class="text-blue-600 dark:text-blue-400 hover:underline"
         >
-          Organizations
+          组织
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item>
@@ -27,15 +27,15 @@
           {{ orgname }}
         </RouterLink>
       </el-breadcrumb-item>
-      <el-breadcrumb-item>Storage</el-breadcrumb-item>
+      <el-breadcrumb-item>存储</el-breadcrumb-item>
     </el-breadcrumb>
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-3xl font-bold">Storage Breakdown</h1>
+      <h1 class="text-3xl font-bold">存储明细</h1>
       <el-button @click="$router.push(`/organizations/${orgname}`)">
         <div class="i-carbon-arrow-left inline-block mr-1" />
-        Back to Organization
+        返回组织主页
       </el-button>
     </div>
 
@@ -45,18 +45,18 @@
         <div class="i-carbon-loading" />
       </el-icon>
       <p class="mt-4 text-gray-500 dark:text-gray-400">
-        Loading storage information...
+        正在加载存储信息...
       </p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="error" class="text-center py-20">
       <div class="i-carbon-warning text-6xl text-red-500 mb-4" />
-      <h2 class="text-2xl font-bold mb-2">Error</h2>
+      <h2 class="text-2xl font-bold mb-2">错误</h2>
       <p class="text-gray-600 mb-4">{{ error }}</p>
       <el-button @click="$router.push(`/organizations/${orgname}`)">
         <div class="i-carbon-arrow-left inline-block mr-1" />
-        Back to Organization
+        返回组织主页
       </el-button>
     </div>
 
@@ -64,11 +64,11 @@
     <div v-else>
       <!-- Summary Card -->
       <div class="card mb-6">
-        <h2 class="text-xl font-semibold mb-4">Summary</h2>
+        <h2 class="text-xl font-semibold mb-4">概览</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <div class="text-sm text-gray-600 dark:text-gray-400">
-              Total Repositories
+              仓库总数
             </div>
             <div class="text-2xl font-bold">
               {{ storageData?.total_repos || 0 }}
@@ -76,13 +76,13 @@
           </div>
           <div>
             <div class="text-sm text-gray-600 dark:text-gray-400">
-              Total Storage Used
+              总存储用量
             </div>
             <div class="text-2xl font-bold">{{ totalStorage }}</div>
           </div>
           <div>
             <div class="text-sm text-gray-600 dark:text-gray-400">
-              Largest Repository
+              最大仓库
             </div>
             <div class="text-2xl font-bold">{{ largestRepoSize }}</div>
           </div>
@@ -92,10 +92,10 @@
       <!-- Repositories Table -->
       <div class="card">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold">Repositories by Storage</h2>
+          <h2 class="text-xl font-semibold">按存储量排序的仓库</h2>
           <el-input
             v-model="searchQuery"
-            placeholder="Search repositories..."
+            placeholder="搜索仓库..."
             class="w-64"
             clearable
           >

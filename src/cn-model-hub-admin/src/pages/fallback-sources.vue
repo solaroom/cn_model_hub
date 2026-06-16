@@ -874,11 +874,11 @@ onMounted(async () => {
       <div class="flex justify-between items-center mb-6 gap-4 flex-wrap">
         <div>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Fallback Sources
+            回退源
           </h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Manage external repository sources (HuggingFace, other cn_model_hub
-            instances).
+            管理外部仓库源（HuggingFace、其他 cn_model_hub
+            实例）。
           </p>
         </div>
       </div>
@@ -887,7 +887,7 @@ onMounted(async () => {
       <el-card v-if="cacheStats" class="stats-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <span>Cache Statistics</span>
+            <span>缓存统计</span>
             <div class="cache-actions">
               <el-button
                 type="warning"
@@ -897,7 +897,7 @@ onMounted(async () => {
                 data-testid="evict-repo-button"
               >
                 <i class="i-carbon-cube mr-1"></i>
-                Evict by Repo...
+                按仓库清理...
               </el-button>
               <el-button
                 type="warning"
@@ -907,7 +907,7 @@ onMounted(async () => {
                 data-testid="evict-user-button"
               >
                 <i class="i-carbon-user mr-1"></i>
-                Evict by User...
+                按用户清理...
               </el-button>
               <el-button
                 type="danger"
@@ -916,7 +916,7 @@ onMounted(async () => {
                 :loading="loading"
               >
                 <i class="i-carbon-trash-can mr-1"></i>
-                Clear Cache
+                清空缓存
               </el-button>
             </div>
           </div>
@@ -950,7 +950,7 @@ onMounted(async () => {
         <template #header>
           <div class="card-header">
             <span>
-              Chain Tester
+              链路测试器
               <el-tag
                 v-if="draftDirty"
                 type="warning"
@@ -958,7 +958,7 @@ onMounted(async () => {
                 class="ml-2"
                 data-testid="draft-dirty-tag"
               >
-                Draft modified
+                草稿已修改
               </el-tag>
             </span>
           </div>
@@ -1072,7 +1072,7 @@ onMounted(async () => {
             <template #label>
               <span data-testid="tester-tab-simulate-label">
                 <i class="i-carbon-edit mr-1"></i>
-                Draft simulate
+                草稿模拟
               </span>
             </template>
 
@@ -1362,7 +1362,7 @@ onMounted(async () => {
             <template #label>
               <span data-testid="tester-tab-real-label">
                 <i class="i-carbon-cloud-satellite mr-1"></i>
-                Live real probe
+                实时探测
               </span>
             </template>
 
@@ -1554,7 +1554,7 @@ onMounted(async () => {
       <el-card class="sources-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <span>Configured Sources</span>
+            <span>已配置源</span>
             <el-button
               type="primary"
               size="small"
@@ -1562,7 +1562,7 @@ onMounted(async () => {
               :loading="loading"
             >
               <i class="i-carbon-add mr-1"></i>
-              Add Source
+              添加源
             </el-button>
           </div>
         </template>
@@ -1731,7 +1731,7 @@ onMounted(async () => {
         </el-form>
 
         <template #footer>
-          <el-button @click="dialogVisible = false">Cancel</el-button>
+          <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSubmit" :loading="loading">
             {{ dialogMode === "create" ? "Create" : "Update" }}
           </el-button>
@@ -1784,14 +1784,14 @@ onMounted(async () => {
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="evictRepoDialogVisible = false">Cancel</el-button>
+          <el-button @click="evictRepoDialogVisible = false">取消</el-button>
           <el-button
             type="warning"
             @click="handleEvictRepo"
             :loading="loading"
             data-testid="evict-repo-submit"
           >
-            Evict
+            清理
           </el-button>
         </template>
       </el-dialog>
@@ -1843,14 +1843,14 @@ onMounted(async () => {
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="evictUserDialogVisible = false">Cancel</el-button>
+          <el-button @click="evictUserDialogVisible = false">取消</el-button>
           <el-button
             type="warning"
             @click="handleEvictUser"
             :loading="loading"
             data-testid="evict-user-submit"
           >
-            Evict...
+            清理...
           </el-button>
         </template>
       </el-dialog>

@@ -21,7 +21,7 @@ const languageList = computed(() => {
 <template>
   <div class="card">
     <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">
-      Language{{ languageList.length > 1 ? "s" : "" }}
+      语言{{ languageList.length > 1 ? "s" : "" }}
     </h3>
     <div class="flex flex-wrap gap-2">
       <el-tag

@@ -7,7 +7,7 @@
         <img
           v-if="currentAvatarUrl && !avatarError"
           :src="currentAvatarUrl"
-          alt="Current avatar"
+          alt="当前头像"
           class="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
           @error="avatarError = true"
         />
@@ -28,7 +28,7 @@
         <div class="flex flex-col sm:flex-row gap-2 mb-2">
           <el-button size="small" @click="triggerFileInput">
             <div class="i-carbon-upload mr-1" />
-            Upload Avatar
+            上传头像
           </el-button>
           <el-button
             v-if="!avatarError"
@@ -37,11 +37,11 @@
             @click="handleDelete"
           >
             <div class="i-carbon-trash-can mr-1" />
-            Delete
+            删除
           </el-button>
         </div>
         <div class="text-xs text-gray-500">
-          Recommended: Square image, min 512x512px. Max 10MB.
+          建议使用正方形图片，最低 512x512px，最大 10MB。
         </div>
       </div>
     </div>
@@ -58,7 +58,7 @@
     <!-- Crop Dialog -->
     <el-dialog
       v-model="showCropDialog"
-      title="Crop Avatar"
+      title="裁剪头像"
       width="700px"
       @close="resetCropper"
     >
@@ -72,7 +72,7 @@
           <cropper-image
             ref="cropperImage"
             :src="imageSrc"
-            alt="Crop preview"
+            alt="裁剪预览"
             initial-center-size="contain"
             scalable
             translatable
@@ -106,9 +106,9 @@
       </div>
 
       <template #footer>
-        <el-button @click="showCropDialog = false">Cancel</el-button>
+        <el-button @click="showCropDialog = false">取消</el-button>
         <el-button type="primary" @click="handleCrop" :loading="uploading">
-          Upload Avatar
+          上传头像
         </el-button>
       </template>
     </el-dialog>

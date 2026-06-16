@@ -7,7 +7,7 @@
         class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-blue-600 mb-4"
       ></div>
       <p class="text-xl text-gray-600 dark:text-gray-400">
-        Loading organization...
+        正在加载组织...
       </p>
     </div>
 
@@ -16,16 +16,16 @@
       <div
         class="i-carbon-group text-8xl text-gray-300 dark:text-gray-600 mb-6 inline-block"
       />
-      <h1 class="text-4xl font-bold mb-4">Organization Not Found</h1>
+      <h1 class="text-4xl font-bold mb-4">组织不存在</h1>
       <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">
-        The organization "<span
+        组织 “<span
           class="font-mono text-blue-600 dark:text-blue-400"
           >{{ orgname }}</span
-        >" does not exist.
+        >” 不存在。
       </p>
       <el-button type="primary" @click="$router.push('/')">
         <div class="i-carbon-home mr-2" />
-        Go to Homepage
+        返回首页
       </el-button>
     </div>
 
@@ -41,7 +41,7 @@
           @click="$router.push(`/organizations/${orgname}/settings`)"
         >
           <div class="i-carbon-settings mr-1" />
-          Organization Settings
+          组织设置
         </el-button>
       </div>
 
@@ -63,7 +63,7 @@
               <div>
                 <h2 class="text-xl font-bold">{{ orgname }}</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                  Organization
+                  组织
                 </p>
                 <!-- External Source Badge -->
                 <el-tag
@@ -154,7 +154,7 @@
                     target="_blank"
                     rel="noopener noreferrer"
                     class="flex items-center h-6 text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors truncate"
-                    title="Website"
+                    title="网站"
                   >
                     {{ profileInfo.website.replace(/^https?:\/\//, "") }}
                   </a>
@@ -219,7 +219,7 @@
                 class="flex items-center gap-2 text-gray-600 dark:text-gray-400"
               >
                 <div class="i-carbon-user-multiple" />
-                {{ profileInfo.member_count || members.length }} member{{
+                {{ profileInfo.member_count || members.length }} 成员{{
                   (profileInfo.member_count || members.length) !== 1 ? "s" : ""
                 }}
               </div>
@@ -230,7 +230,7 @@
           <div class="card">
             <h3 class="font-semibold mb-3 flex items-center gap-2">
               <div class="i-carbon-user-multiple" />
-              Members
+              成员
               <span class="text-sm text-gray-500"
                 >({{ members.length || 0 }})</span
               >
@@ -245,7 +245,7 @@
                 <!-- Member Avatar -->
                 <img
                   :src="`/api/users/${member.user}/avatar?t=${Date.now()}`"
-                  :alt="`${member.user} avatar`"
+                  :alt="`${成员.user} avatar`"
                   class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-600"
                   @error="
                     (e) => {
@@ -272,7 +272,7 @@
               v-else
               class="text-center py-4 text-sm text-gray-500 dark:text-gray-400"
             >
-              No members yet
+              暂无成员
             </div>
           </div>
 
@@ -280,14 +280,14 @@
           <div v-if="quotaInfo" class="card">
             <h3 class="font-semibold mb-3 flex items-center gap-2">
               <div class="i-carbon-data-base text-gray-500" />
-              Storage Usage
+              存储用量
             </h3>
 
             <!-- Public Storage -->
             <div class="mb-4">
               <div class="flex justify-between items-center mb-1">
                 <span class="text-sm text-gray-600 dark:text-gray-400"
-                  >Public</span
+                  >公开</span
                 >
                 <span class="text-sm font-mono">
                   {{ formatBytes(quotaInfo.public_used_bytes) }}
@@ -297,7 +297,7 @@
                   >
                     / {{ formatBytes(quotaInfo.public_quota_bytes) }}
                   </span>
-                  <span v-else class="text-gray-400">/ Unlimited</span>
+                  <span v-else class="text-gray-400">/ 不限</span>
                 </span>
               </div>
               <el-progress
@@ -318,7 +318,7 @@
             <div v-if="quotaInfo.can_see_private" class="mb-2">
               <div class="flex justify-between items-center mb-1">
                 <span class="text-sm text-gray-600 dark:text-gray-400"
-                  >Private</span
+                  >私有</span
                 >
                 <span class="text-sm font-mono">
                   {{ formatBytes(quotaInfo.private_used_bytes) }}
@@ -328,7 +328,7 @@
                   >
                     / {{ formatBytes(quotaInfo.private_quota_bytes) }}
                   </span>
-                  <span v-else class="text-gray-400">/ Unlimited</span>
+                  <span v-else class="text-gray-400">/ 不限</span>
                 </span>
               </div>
               <el-progress
@@ -348,7 +348,7 @@
             <!-- Total -->
             <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
               <div class="flex justify-between items-center">
-                <span class="text-sm font-semibold">Total</span>
+                <span class="text-sm font-semibold">总计</span>
                 <span class="text-sm font-mono font-semibold">
                   {{ formatBytes(quotaInfo.total_used_bytes) }}
                 </span>
@@ -363,14 +363,14 @@
                 class="w-full"
               >
                 <div class="i-carbon-chart-bar inline-block mr-1" />
-                View Details
+                查看详情
               </el-button>
             </div>
           </div>
 
           <!-- Stats Summary / Tab Navigation -->
           <div class="card">
-            <h3 class="font-semibold mb-3">Repositories</h3>
+            <h3 class="font-semibold mb-3">仓库</h3>
             <div class="space-y-1">
               <RouterLink
                 :to="`/organizations/${orgname}`"
@@ -381,7 +381,7 @@
               >
                 <div class="flex items-center gap-2 text-sm">
                   <div class="i-carbon-grid text-gray-500 dark:text-gray-400" />
-                  <span class="font-semibold">Overview</span>
+                  <span class="font-semibold">概览</span>
                 </div>
               </RouterLink>
 
@@ -394,7 +394,7 @@
               >
                 <div class="flex items-center gap-2 text-sm">
                   <div class="i-carbon-model text-blue-500" />
-                  <span>Models</span>
+                  <span>模型</span>
                 </div>
                 <span
                   class="text-sm font-semibold text-gray-600 dark:text-gray-400"
@@ -412,7 +412,7 @@
               >
                 <div class="flex items-center gap-2 text-sm">
                   <div class="i-carbon-data-table text-green-500" />
-                  <span>Datasets</span>
+                  <span>数据集</span>
                 </div>
                 <span
                   class="text-sm font-semibold text-gray-600 dark:text-gray-400"
@@ -430,7 +430,7 @@
               >
                 <div class="flex items-center gap-2 text-sm">
                   <div class="i-carbon-application text-purple-500" />
-                  <span>Spaces</span>
+                  <span>空间</span>
                 </div>
                 <span
                   class="text-sm font-semibold text-gray-600 dark:text-gray-400"
@@ -458,13 +458,13 @@
             >
               <div class="flex items-center gap-2">
                 <div class="i-carbon-model text-blue-500 text-xl md:text-2xl" />
-                <h2 class="text-xl md:text-2xl font-bold">Models</h2>
+                <h2 class="text-xl md:text-2xl font-bold">模型</h2>
               </div>
               <div class="flex items-center gap-3 ml-auto shrink-0">
                 <div class="w-56 sm:w-64 lg:w-72 shrink-0">
                   <el-select
                     v-model="selectedSorts.model"
-                    placeholder="Sort repositories"
+                    placeholder="仓库排序"
                     class="w-full"
                   >
                     <el-option
@@ -536,7 +536,7 @@
                       @click.stop="openExternalRepo(repo, 'model')"
                     >
                       <div class="i-carbon-launch inline-block mr-1" />
-                      View on {{ repo._source }}
+                      查看 {{ repo._source }}
                     </el-button>
                   </div>
 
@@ -558,7 +558,7 @@
               <!-- Show More button -->
               <RouterLink :to="`/organizations/${orgname}/models`">
                 <el-button v-if="hasMoreRepos('model')" class="w-full">
-                  Show all {{ getCount("model") }} models ->
+                  查看全部 {{ getCount("model") }} 个模型 ->
                 </el-button>
               </RouterLink>
             </div>
@@ -568,7 +568,7 @@
               class="text-center py-12 text-gray-500 dark:text-gray-400"
             >
               <div class="i-carbon-document-blank text-6xl mb-4 inline-block" />
-              <p>No models yet</p>
+              <p>暂无模型</p>
             </div>
           </section>
 
@@ -581,13 +581,13 @@
                 <div
                   class="i-carbon-data-table text-green-500 text-xl md:text-2xl"
                 />
-                <h2 class="text-xl md:text-2xl font-bold">Datasets</h2>
+                <h2 class="text-xl md:text-2xl font-bold">数据集</h2>
               </div>
               <div class="flex items-center gap-3 ml-auto shrink-0">
                 <div class="w-56 sm:w-64 lg:w-72 shrink-0">
                   <el-select
                     v-model="selectedSorts.dataset"
-                    placeholder="Sort repositories"
+                    placeholder="仓库排序"
                     class="w-full"
                   >
                     <el-option
@@ -659,7 +659,7 @@
                       @click.stop="openExternalRepo(repo, 'dataset')"
                     >
                       <div class="i-carbon-launch inline-block mr-1" />
-                      View on {{ repo._source }}
+                      查看 {{ repo._source }}
                     </el-button>
                   </div>
 
@@ -681,7 +681,7 @@
               <!-- Show More button -->
               <RouterLink :to="`/organizations/${orgname}/datasets`">
                 <el-button v-if="hasMoreRepos('dataset')" class="w-full">
-                  Show all {{ getCount("dataset") }} datasets ->
+                  查看全部 {{ getCount("dataset") }} 个数据集 ->
                 </el-button>
               </RouterLink>
             </div>
@@ -691,7 +691,7 @@
               class="text-center py-12 text-gray-500 dark:text-gray-400"
             >
               <div class="i-carbon-document-blank text-6xl mb-4 inline-block" />
-              <p>No datasets yet</p>
+              <p>暂无数据集</p>
             </div>
           </section>
 
@@ -704,13 +704,13 @@
                 <div
                   class="i-carbon-application text-purple-500 text-xl md:text-2xl"
                 />
-                <h2 class="text-xl md:text-2xl font-bold">Spaces</h2>
+                <h2 class="text-xl md:text-2xl font-bold">空间</h2>
               </div>
               <div class="flex items-center gap-3 ml-auto shrink-0">
                 <div class="w-56 sm:w-64 lg:w-72 shrink-0">
                   <el-select
                     v-model="selectedSorts.space"
-                    placeholder="Sort repositories"
+                    placeholder="仓库排序"
                     class="w-full"
                   >
                     <el-option
@@ -782,7 +782,7 @@
                       @click.stop="openExternalRepo(repo, 'space')"
                     >
                       <div class="i-carbon-launch inline-block mr-1" />
-                      View on {{ repo._source }}
+                      查看 {{ repo._source }}
                     </el-button>
                   </div>
 
@@ -804,7 +804,7 @@
               <!-- Show More button -->
               <RouterLink :to="`/organizations/${orgname}/spaces`">
                 <el-button v-if="hasMoreRepos('space')" class="w-full">
-                  Show all {{ getCount("space") }} spaces ->
+                  查看全部 {{ getCount("space") }} 个空间 ->
                 </el-button>
               </RouterLink>
             </div>
@@ -814,7 +814,7 @@
               class="text-center py-12 text-gray-500 dark:text-gray-400"
             >
               <div class="i-carbon-document-blank text-6xl mb-4 inline-block" />
-              <p>No spaces yet</p>
+              <p>暂无空间</p>
             </div>
           </section>
         </main>

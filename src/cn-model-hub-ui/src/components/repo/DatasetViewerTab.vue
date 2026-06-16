@@ -295,7 +295,7 @@ function formatSize(bytes) {
                   {{ selectedFolder ? "Files in Folder" : "Previewable Files" }}
                 </h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ displayFiles.length }} file{{
+                  {{ displayFiles.length }} 文件{{
                     displayFiles.length !== 1 ? "s" : ""
                   }}
                 </p>
@@ -307,7 +307,7 @@ function formatSize(bytes) {
                 class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
               >
                 <div class="i-carbon-arrow-left inline-block mr-1" />
-                Back
+                返回
               </button>
             </div>
           </div>
@@ -327,8 +327,8 @@ function formatSize(bytes) {
               class="text-center py-8 px-3 text-gray-600 dark:text-gray-400"
             >
               <div class="i-carbon-document-blank text-4xl mb-2 inline-block" />
-              <p class="text-sm">No previewable files</p>
-              <p class="text-xs mt-1">Supported: CSV, JSON, JSONL, Parquet</p>
+              <p class="text-sm">没有可预览文件</p>
+              <p class="text-xs mt-1">支持：CSV、JSON、JSONL、Parquet</p>
             </div>
 
             <!-- Loading folder -->
@@ -339,7 +339,7 @@ function formatSize(bytes) {
               <div
                 class="i-carbon-loading inline-block text-2xl animate-spin mb-2"
               />
-              <p class="text-sm">Loading folder...</p>
+              <p class="text-sm">正在加载文件夹...</p>
             </div>
 
             <!-- Folders (show when not in a folder) -->
@@ -350,7 +350,7 @@ function formatSize(bytes) {
               <div
                 class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400"
               >
-                Folders
+                文件夹
               </div>
               <div
                 v-for="folder in previewableFolders"
@@ -376,7 +376,7 @@ function formatSize(bytes) {
                 <div
                   class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400"
                 >
-                  Root Files
+                  根目录文件
                 </div>
               </div>
             </div>
@@ -438,7 +438,7 @@ function formatSize(bytes) {
               <label
                 class="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1"
               >
-                SQL Query
+                SQL 查询
               </label>
               <textarea
                 v-model="sqlQuery"
@@ -447,7 +447,7 @@ function formatSize(bytes) {
                 class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-black dark:text-white resize-vertical"
               />
               <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Use 'dataset' as table name
+                使用 'dataset' 作为表名
               </div>
 
               <!-- SQL Warning -->
@@ -465,7 +465,7 @@ function formatSize(bytes) {
               class="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm transition-colors"
               :disabled="!sqlQuery.trim()"
             >
-              Run Query
+              运行查询
             </button>
           </div>
         </div>
@@ -479,7 +479,7 @@ function formatSize(bytes) {
             <div class="i-carbon-loading" />
           </el-icon>
           <p class="mt-4 text-gray-600 dark:text-gray-400">
-            Loading file URL...
+            正在加载文件 URL...
           </p>
         </div>
 
@@ -489,7 +489,7 @@ function formatSize(bytes) {
           class="card text-center py-20 text-gray-600 dark:text-gray-400"
         >
           <div class="i-carbon-data-table text-6xl mb-4 inline-block" />
-          <p>Select a file to preview</p>
+          <p>选择文件进行预览</p>
         </div>
 
         <!-- Dataset Viewer -->
@@ -521,7 +521,7 @@ function formatSize(bytes) {
         </h3>
         <el-button size="small" @click="selectedRowIndex = null">
           <div class="i-carbon-close inline-block mr-1" />
-          Close
+          关闭
         </el-button>
       </div>
 
@@ -537,7 +537,7 @@ function formatSize(bytes) {
         >
           <div
             class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 truncate"
-            :title="currentPreviewData.columns[colIndex]"
+            :title="current预览Data.列[colIndex]"
           >
             {{ currentPreviewData.columns[colIndex] }}
           </div>
@@ -546,7 +546,7 @@ function formatSize(bytes) {
           <div v-if="isImageUrl(value)">
             <img
               :src="String(value)"
-              alt="Preview"
+              alt="预览"
               class="max-w-full h-auto max-h-48 rounded border border-gray-300 dark:border-gray-600 cursor-pointer hover:opacity-80"
               @click="openMediaModal(value, 'image')"
             />
@@ -562,7 +562,7 @@ function formatSize(bytes) {
               class="max-w-full h-auto max-h-48 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
               @click="openMediaModal(value, 'video')"
             >
-              Your browser does not support the video tag.
+              你的浏览器不支持视频标签。
             </video>
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
               {{ formatValue(value) }}

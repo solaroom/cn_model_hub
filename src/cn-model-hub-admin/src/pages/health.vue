@@ -140,19 +140,19 @@ onBeforeUnmount(() => {
       <div class="flex justify-between items-center mb-6 gap-4 flex-wrap">
         <div>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Dependency Health
+            依赖健康
           </h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Live probes for the services this hub depends on. Useful for
-            quickly answering "is the deployment healthy?" without leaving the
-            admin UI.
+            实时探测本平台依赖的服务，用于
+            在不离开管理后台的情况下快速判断部署是否健康。
+            
           </p>
         </div>
         <div class="flex items-center gap-3">
           <el-select
             v-model="refreshIntervalSeconds"
             class="refresh-select"
-            placeholder="Auto-refresh"
+            placeholder="自动刷新"
           >
             <el-option
               v-for="option in REFRESH_OPTIONS"
@@ -168,7 +168,7 @@ onBeforeUnmount(() => {
             data-testid="health-recheck"
           >
             <div class="i-carbon-renew mr-1" />
-            Re-check
+            重新检查
           </el-button>
         </div>
       </div>
@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
       <el-alert
         v-if="lastError"
         type="warning"
-        :title="lastError"
+        :title="last错误"
         :closable="false"
         show-icon
         class="mb-4"
@@ -190,14 +190,14 @@ onBeforeUnmount(() => {
       >
         <div class="flex items-center gap-3 flex-wrap">
           <span class="font-semibold text-gray-700 dark:text-gray-200">
-            Overall
+            整体
           </span>
           <el-tag :type="statusType(overallStatus)" size="large" effect="dark">
             {{ statusLabel(overallStatus) }}
           </el-tag>
           <span class="text-gray-500 dark:text-gray-400 text-sm">
             checked at {{ formatTimestamp(report.checked_at_ms) }} · probes
-            ran in {{ formatLatency(report.elapsed_ms) }} · per-probe timeout
+            ran in {{ formatLatency(report.elapsed_ms) }} · per-probe 次out
             {{ report.timeout_seconds }} s
           </span>
         </div>

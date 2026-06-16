@@ -61,11 +61,11 @@ function selectFile(file) {
   <div class="tar-file-list">
     <!-- Header -->
     <div class="header p-4 border-b border-gray-200 dark:border-gray-700">
-      <h4 class="text-lg font-semibold mb-2">Archive Contents</h4>
+      <h4 class="text-lg font-semibold mb-2">归档内容</h4>
       <input
         v-model="filter"
         type="text"
-        placeholder="Filter files..."
+        placeholder="筛选文件..."
         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-black dark:text-white"
       />
     </div>
@@ -108,13 +108,13 @@ function selectFile(file) {
             v-if="isPreviewable(file.name)"
             class="preview-badge px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs"
           >
-            Preview →
+            预览 →
           </div>
           <div
             v-else
             class="not-previewable text-xs text-gray-500 dark:text-gray-500"
           >
-            Not previewable
+            不可预览
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ function selectFile(file) {
       v-if="filteredFiles.length === 0"
       class="empty-state p-8 text-center text-gray-600 dark:text-gray-400"
     >
-      No files found
+      未找到文件
     </div>
   </div>
 </template>

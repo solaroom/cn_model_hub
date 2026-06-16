@@ -141,20 +141,20 @@ const sourceRows = computed(() => {
         plain
         @click="retry"
       >
-        Retry
+        重试
       </el-button>
     </slot>
 
     <div v-if="sourceRows.length" class="mt-4 w-full max-w-xl text-left">
       <details class="text-xs">
         <summary class="cursor-pointer text-gray-500 dark:text-gray-400 mb-2">
-          Fallback sources tried ({{ sourceRows.length }})
+          已尝试的回退源 ({{ sourceRows.length }})
         </summary>
         <el-table :data="sourceRows" size="small" :border="true">
-          <el-table-column prop="name" label="Source" width="130" />
+          <el-table-column prop="name" label="来源" width="130" />
           <el-table-column prop="status" label="HTTP" width="70" />
-          <el-table-column prop="category" label="Category" width="110" />
-          <el-table-column prop="message" label="Message" />
+          <el-table-column prop="category" label="分类" width="110" />
+          <el-table-column prop="message" label="消息" />
         </el-table>
       </details>
     </div>

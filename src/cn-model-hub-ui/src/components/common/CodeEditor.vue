@@ -5,14 +5,14 @@
       <div class="flex items-center gap-2">
         <el-tag size="small" type="info">{{ language }}</el-tag>
         <span class="text-sm text-gray-600 dark:text-gray-400">
-          {{ lineCount }} lines
+          {{ lineCount }} 行
         </span>
-        <span v-if="modified" class="text-xs text-orange-500">● Modified</span>
+        <span v-if="modified" class="text-xs text-orange-500">● 已修改</span>
       </div>
       <div class="flex items-center gap-2">
         <el-button v-if="modified" size="small" @click="resetContent">
           <div class="i-carbon-reset inline-block mr-1" />
-          Reset
+          重置
         </el-button>
         <el-button
           size="small"

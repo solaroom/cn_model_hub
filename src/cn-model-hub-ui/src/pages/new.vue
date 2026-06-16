@@ -58,7 +58,7 @@
               size="large"
               class="w-full"
             >
-              <el-option :label="currentUser" :value="currentUser">
+              <el-option :label="current用户" :value="currentUser">
                 <div class="flex items-center gap-2">
                   <div class="i-carbon-user-avatar" />
                   <span>{{ currentUser }}</span>

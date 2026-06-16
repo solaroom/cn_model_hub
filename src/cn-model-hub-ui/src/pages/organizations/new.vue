@@ -3,13 +3,13 @@
   <div class="container-main">
     <div class="max-w-3xl mx-auto">
       <h1 class="text-2xl md:text-3xl font-bold mb-2">
-        Create New Organization
+        新建组织
       </h1>
       <p
         class="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 md:mb-8"
       >
-        Organizations allow you to collaborate with others on repositories and
-        manage team permissions.
+        组织可用于与他人协作管理仓库并
+        管理团队权限。
       </p>
 
       <div class="card">
@@ -21,7 +21,7 @@
           @submit.prevent="handleSubmit"
         >
           <!-- Organization Name -->
-          <el-form-item label="Organization Name" prop="name">
+          <el-form-item label="组织名称" prop="name">
             <el-input
               v-model="form.name"
               placeholder="my-organization"
@@ -30,22 +30,22 @@
             />
             <div class="text-xs text-gray-500 mt-1">
               <div class="i-carbon-information inline-block mr-1" />
-              Letters (case-insensitive), numbers, hyphens and underscores
-              allowed
+              支持英文字母（不区分大小写）、数字、连字符和下划线
+              。
             </div>
           </el-form-item>
 
           <!-- Description -->
-          <el-form-item label="Description" prop="description">
+          <el-form-item label="描述" prop="description">
             <el-input
               v-model="form.description"
               type="textarea"
               :rows="4"
-              placeholder="Describe your organization..."
+              placeholder="描述你的组织..."
               size="large"
             />
             <div class="text-xs text-gray-500 mt-1">
-              Optional - You can add or update this later
+              可选，之后也可以补充或修改
             </div>
           </el-form-item>
 
@@ -59,9 +59,9 @@
               class="flex-1"
             >
               <div class="i-carbon-add mr-2" />
-              Create Organization
+              创建组织
             </el-button>
-            <el-button size="large" @click="handleCancel">Cancel</el-button>
+            <el-button size="large" @click="handleCancel">取消</el-button>
           </div>
         </el-form>
       </div>
@@ -74,19 +74,19 @@
               class="i-carbon-information text-2xl text-blue-500 flex-shrink-0"
             />
             <div>
-              <h3 class="font-semibold mb-2">About Organizations</h3>
+              <h3 class="font-semibold mb-2">关于组织</h3>
               <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <li>• Create repositories under your organization namespace</li>
-                <li>• Add team members with different permission levels</li>
+                <li>• 在组织命名空间下创建仓库</li>
+                <li>• 添加不同权限级别的团队成员</li>
                 <li>
-                  • Manage access control for all organization repositories
+                  • 管理组织内所有仓库的访问权限
                 </li>
                 <li>
-                  • Create an organization card by making a
+                  • 创建组织同名数据集并添加 README.md，即可生成组织卡片
                   <code class="px-1 bg-gray-200 dark:bg-gray-700 rounded"
                     >OrgName/OrgName</code
                   >
-                  dataset with a README.md
+                  
                 </li>
               </ul>
             </div>

@@ -8,7 +8,7 @@
           to="/"
           class="text-blue-600 dark:text-blue-400 hover:underline"
         >
-          Home
+          首页
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item>
@@ -52,16 +52,16 @@
     >
       <template #actions>
         <div class="flex items-center gap-2 mt-4">
-          <el-button type="primary" plain @click="loadFile">Retry</el-button>
+          <el-button type="primary" plain @click="loadFile">重试</el-button>
           <el-button
             v-if="errorClassification.kind === 'gated'"
             type="primary"
             @click="$router.push('/settings')"
           >
             <div class="i-carbon-settings inline-block mr-1" />
-            Open account settings
+            打开账号设置
           </el-button>
-          <el-button v-else @click="$router.back()">Go Back</el-button>
+          <el-button v-else @click="$router.back()">返回</el-button>
         </div>
       </template>
     </ErrorState>

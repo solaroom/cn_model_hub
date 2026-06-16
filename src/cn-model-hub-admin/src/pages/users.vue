@@ -400,10 +400,10 @@ onMounted(() => {
     <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          User Management
+          用户管理
         </h1>
         <el-button type="primary" @click="dialogVisible = true" :icon="'Plus'">
-          Create User
+          创建用户
         </el-button>
       </div>
 
@@ -412,7 +412,7 @@ onMounted(() => {
         <div class="flex gap-4 items-center flex-wrap">
           <el-input
             v-model="searchQuery"
-            placeholder="Search users by username or email..."
+            placeholder="按用户名或邮箱搜索用户..."
             clearable
             @input="handleSearchInput"
             @clear="clearSearch"
@@ -559,7 +559,7 @@ onMounted(() => {
                 @click="handleViewUser(row)"
                 :icon="'View'"
               >
-                View
+                查看
               </el-button>
               <el-button
                 size="small"
@@ -574,7 +574,7 @@ onMounted(() => {
                 @click="handleDeleteUser(row)"
                 :icon="'Delete'"
               >
-                Delete
+                删除
               </el-button>
             </template>
           </el-table-column>
@@ -623,7 +623,7 @@ onMounted(() => {
               type="number"
               placeholder="Leave empty for unlimited"
             >
-              <template #append>bytes</template>
+              <template #append>字节</template>
             </el-input>
             <div class="text-xs text-gray-500 mt-1">
               Example: 10GB = 10737418240 bytes (leave empty for unlimited)
@@ -636,7 +636,7 @@ onMounted(() => {
               type="number"
               placeholder="Leave empty for unlimited"
             >
-              <template #append>bytes</template>
+              <template #append>字节</template>
             </el-input>
             <div class="text-xs text-gray-500 mt-1">
               Example: 50GB = 53687091200 bytes (leave empty for unlimited)
@@ -645,9 +645,9 @@ onMounted(() => {
         </el-form>
 
         <template #footer>
-          <el-button @click="dialogVisible = false">Cancel</el-button>
+          <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleCreateUser"
-            >Create User</el-button
+            >创建用户</el-button
           >
         </template>
       </el-dialog>
@@ -702,9 +702,9 @@ onMounted(() => {
         </div>
 
         <template #footer>
-          <el-button @click="userDialogVisible = false">Close</el-button>
+          <el-button @click="userDialogVisible = false">关闭</el-button>
           <el-button type="primary" @click="openQuotaDialog">
-            Edit Quota
+            编辑配额
           </el-button>
         </template>
       </el-dialog>
@@ -853,9 +853,9 @@ onMounted(() => {
         </el-form>
 
         <template #footer>
-          <el-button @click="quotaDialogVisible = false">Cancel</el-button>
+          <el-button @click="quotaDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="saveQuota" :loading="loading">
-            Save
+            保存
           </el-button>
         </template>
       </el-dialog>

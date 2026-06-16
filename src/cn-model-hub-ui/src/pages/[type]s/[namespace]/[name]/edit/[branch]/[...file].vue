@@ -8,7 +8,7 @@
           to="/"
           class="text-blue-600 dark:text-blue-400 hover:underline"
         >
-          Home
+          首页
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item>
@@ -36,7 +36,7 @@
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item>
-        <span class="text-gray-500">Edit:</span> {{ fileName }}
+        <span class="text-gray-500">编辑：</span> {{ fileName }}
       </el-breadcrumb-item>
     </el-breadcrumb>
 
@@ -55,9 +55,9 @@
       <template #actions>
         <div class="flex items-center gap-2 mt-4">
           <el-button type="primary" plain @click="loadFileContent">
-            Retry
+            重试
           </el-button>
-          <el-button @click="$router.back()">Go Back</el-button>
+          <el-button @click="$router.back()">返回</el-button>
         </div>
       </template>
     </ErrorState>
@@ -129,9 +129,9 @@
         </el-form>
 
         <template #footer>
-          <el-button @click="showCommitDialog = false">Cancel</el-button>
+          <el-button @click="showCommitDialog = false">取消</el-button>
           <el-button type="primary" :loading="committing" @click="submitCommit">
-            Commit Changes
+            提交更改
           </el-button>
         </template>
       </el-dialog>

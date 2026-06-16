@@ -403,7 +403,7 @@ onMounted(() => {
     <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Repository Management
+          仓库管理
         </h1>
         <el-button
           type="warning"
@@ -411,7 +411,7 @@ onMounted(() => {
           :loading="recalculating"
         >
           <span class="mr-2">🔄</span>
-          Recalculate All Storage
+          重新计算全部存储
         </el-button>
       </div>
 
@@ -420,7 +420,7 @@ onMounted(() => {
         <div class="flex gap-4 items-center">
           <el-input
             v-model="searchQuery"
-            placeholder="Search repositories by name or full ID..."
+            placeholder="按名称或完整 ID 搜索仓库..."
             clearable
             @input="handleSearchInput"
             @clear="clearSearch"
@@ -505,7 +505,7 @@ onMounted(() => {
                   size="small"
                   effect="plain"
                 >
-                  Private
+                  私有
                 </el-tag>
               </div>
             </template>
@@ -531,7 +531,7 @@ onMounted(() => {
               <span v-if="row.quota_bytes" class="font-mono text-sm">
                 {{ formatBytes(row.quota_bytes) }}
               </span>
-              <span v-else class="text-gray-400 text-sm">Inherit</span>
+              <span v-else class="text-gray-400 text-sm">继承</span>
             </template>
           </el-table-column>
           <el-table-column label="% Used" width="140">
@@ -564,7 +564,7 @@ onMounted(() => {
           <el-table-column label="Actions" width="120" fixed="right">
             <template #default="{ row }">
               <el-button size="small" @click="handleViewRepo(row)">
-                View Details
+                查看详情
               </el-button>
             </template>
           </el-table-column>
@@ -844,7 +844,7 @@ onMounted(() => {
                 <!-- Move Repository -->
                 <el-card class="bg-white dark:bg-gray-800">
                   <template #header>
-                    <div class="font-semibold">Move/Rename Repository</div>
+                    <div class="font-semibold">移动/重命名仓库</div>
                   </template>
                   <el-form label-position="top">
                     <el-form-item label="To Namespace">
@@ -872,7 +872,7 @@ onMounted(() => {
                 <!-- Squash Repository -->
                 <el-card class="bg-white dark:bg-gray-800">
                   <template #header>
-                    <div class="font-semibold">Squash Repository</div>
+                    <div class="font-semibold">压缩仓库</div>
                   </template>
                   <el-alert type="warning" :closable="false" class="mb-4">
                     Clears all commit history. Only current state preserved.
@@ -891,7 +891,7 @@ onMounted(() => {
                 <el-card class="bg-white dark:bg-gray-800">
                   <template #header>
                     <div class="font-semibold text-red-600">
-                      Delete Repository
+                      删除仓库
                     </div>
                   </template>
                   <el-alert type="error" :closable="false" class="mb-4">
@@ -911,7 +911,7 @@ onMounted(() => {
         </div>
 
         <template #footer>
-          <el-button @click="repoDialogVisible = false">Close</el-button>
+          <el-button @click="repoDialogVisible = false">关闭</el-button>
         </template>
       </el-dialog>
     </div>

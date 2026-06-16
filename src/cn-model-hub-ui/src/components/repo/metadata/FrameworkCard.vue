@@ -30,7 +30,7 @@ const libraryIcon = computed(() => {
 
 <template>
   <div class="card">
-    <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">Framework</h3>
+    <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">框架</h3>
     <div class="space-y-3 text-sm">
       <div v-if="metadata.library_name" class="flex items-center gap-2">
         <div
@@ -43,7 +43,7 @@ const libraryIcon = computed(() => {
       </div>
 
       <div v-if="pipelineTagName">
-        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">Task:</div>
+        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">任务：</div>
         <el-tag type="success" size="small">
           {{ pipelineTagName }}
         </el-tag>

@@ -33,7 +33,7 @@ const licenseLink = computed(() => {
 
 <template>
   <div class="card">
-    <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">License</h3>
+    <h3 class="font-semibold mb-3 text-gray-900 dark:text-white">许可证</h3>
     <div class="space-y-2">
       <div class="flex items-center gap-2">
         <div
@@ -50,7 +50,7 @@ const licenseLink = computed(() => {
         rel="noopener noreferrer"
         class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
       >
-        View License
+        查看许可证
         <div class="i-carbon-launch text-xs" />
       </a>
     </div>

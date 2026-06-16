@@ -230,19 +230,19 @@ onBeforeUnmount(() => {
       <div class="flex justify-between items-center mb-6 gap-4 flex-wrap">
         <div>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            L2 Cache (Redis)
+            二级缓存（Redis）
           </h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Hit / miss counters, Redis memory state, and the bootstrap-flush
-            metadata. The cache is never on the correctness critical path —
-            see <code>docs/development/cache.md</code> for the design.
+            命中/未命中计数、Redis 内存状态以及启动清理
+            元数据。缓存不在正确性关键路径上。
+            见 <code>docs/development/cache.md</code> 查看设计说明。
           </p>
         </div>
         <div class="flex items-center gap-3">
           <el-select
             v-model="refreshIntervalSeconds"
             class="refresh-select"
-            placeholder="Auto-refresh"
+            placeholder="自动刷新"
           >
             <el-option
               v-for="option in REFRESH_OPTIONS"
@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
             data-testid="cache-refresh"
           >
             <div class="i-carbon-renew mr-1" />
-            Refresh
+            刷新
           </el-button>
           <el-button
             :loading="resetting"
@@ -267,7 +267,7 @@ onBeforeUnmount(() => {
             data-testid="cache-reset-metrics"
           >
             <div class="i-carbon-reset mr-1" />
-            Reset counters
+            重置计数器
           </el-button>
         </div>
       </div>
@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
       <el-alert
         v-if="lastError"
         type="warning"
-        :title="lastError"
+        :title="last错误"
         :closable="false"
         show-icon
         class="mb-4"
@@ -290,13 +290,13 @@ onBeforeUnmount(() => {
       >
         <div class="flex items-center gap-3 flex-wrap">
           <span class="font-semibold text-gray-700 dark:text-gray-200">
-            Status
+            状态
           </span>
           <el-tag :type="stateBadge.type" size="large" effect="dark">
             {{ stateBadge.label }}
           </el-tag>
           <span class="text-gray-500 dark:text-gray-400 text-sm">
-            namespace
+            命名空间
             <code>{{ metrics.namespace }}</code>
           </span>
           <span
@@ -304,7 +304,7 @@ onBeforeUnmount(() => {
             class="text-gray-500 dark:text-gray-400 text-sm"
           >
             · {{ memory.used_memory_human || formatBytes(memory.used_memory) }}
-            used
+            已用
             <span v-if="memory.maxmemory && memory.maxmemory > 0">
               / {{ memory.maxmemory_human || formatBytes(memory.maxmemory) }}
             </span>
@@ -313,14 +313,14 @@ onBeforeUnmount(() => {
             v-if="memory?.available"
             class="text-gray-500 dark:text-gray-400 text-sm"
           >
-            · policy
+            · 策略
             <code>{{ memory.maxmemory_policy }}</code>
           </span>
           <span
             v-if="memory?.available && memory.evicted_keys !== undefined"
             class="text-gray-500 dark:text-gray-400 text-sm"
           >
-            · evictions {{ formatNumber(memory.evicted_keys) }}
+            · 驱逐 {{ formatNumber(memory.evicted_keys) }}
           </span>
         </div>
       </el-card>
@@ -333,7 +333,7 @@ onBeforeUnmount(() => {
         data-testid="cache-bootstrap"
       >
         <template #header>
-          <span class="font-semibold">Bootstrap flush</span>
+          <span class="font-semibold">启动清理</span>
         </template>
         <ul class="bootstrap-meta">
           <li>
@@ -371,13 +371,13 @@ onBeforeUnmount(() => {
       >
         <template #header>
           <div class="flex items-center justify-between">
-            <span class="font-semibold">Namespaces</span>
+            <span class="font-semibold">命名空间</span>
             <span
               v-if="totals.total > 0"
               class="text-gray-500 dark:text-gray-400 text-sm"
             >
               total {{ formatNumber(totals.total) }} reads ·
-              hit rate {{ formatPercentage(totals.hitRate) }}
+              命中率 {{ formatPercentage(totals.hitRate) }}
             </span>
           </div>
         </template>

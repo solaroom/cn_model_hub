@@ -115,7 +115,7 @@ watch(selectedRef, () => {
   <div class="file-tree-container">
     <div class="flex justify-between items-center mb-4">
       <div class="flex items-center gap-2">
-        <span class="text-sm font-semibold">Branch/Ref:</span>
+        <span class="text-sm font-semibold">分支/引用：</span>
         <el-input
           v-model="selectedRef"
           placeholder="main"

@@ -187,11 +187,11 @@ onMounted(() => {
     <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Database Viewer
+          数据库查看器
         </h1>
         <el-alert type="warning" :closable="false" show-icon>
           <span class="text-sm"
-            >Read-only mode - Only SELECT queries allowed</span
+            >只读模式，仅允许 SELECT 查询</span
           >
         </el-alert>
       </div>
@@ -203,7 +203,7 @@ onMounted(() => {
             <template #header>
               <div class="flex items-center gap-2">
                 <div class="i-carbon-table text-blue-600" />
-                <span class="font-bold">Tables</span>
+                <span class="font-bold">数据表</span>
               </div>
             </template>
 
@@ -247,7 +247,7 @@ onMounted(() => {
             <template #header>
               <div class="flex items-center gap-2">
                 <div class="i-carbon-template text-green-600" />
-                <span class="font-bold">Templates</span>
+                <span class="font-bold">模板</span>
               </div>
             </template>
 
@@ -272,14 +272,14 @@ onMounted(() => {
           <el-card class="mb-4">
             <template #header>
               <div class="flex justify-between items-center">
-                <span class="font-bold">Query Editor</span>
+                <span class="font-bold">查询编辑器</span>
                 <div class="flex gap-2">
                   <el-button
                     size="small"
                     @click="queryText = ''"
                     :icon="'Delete'"
                   >
-                    Clear
+                    清空
                   </el-button>
                   <el-button
                     type="primary"
@@ -288,7 +288,7 @@ onMounted(() => {
                     :loading="executing"
                     :icon="'Play'"
                   >
-                    Execute Query
+                    执行查询
                   </el-button>
                 </div>
               </div>
@@ -324,31 +324,31 @@ onMounted(() => {
             <template #header>
               <div class="flex justify-between items-center">
                 <div>
-                  <span class="font-bold">Results</span>
+                  <span class="font-bold">结果</span>
                   <el-tag class="ml-2" type="info">
-                    {{ queryResults.columns.length }} columns
+                    {{ queryResults.columns.length }} 列
                   </el-tag>
                   <el-tag class="ml-2" type="success">
-                    {{ queryResults.count }} rows
+                    {{ queryResults.count }} 行
                   </el-tag>
                   <el-tag
                     v-if="queryResults.truncated"
                     class="ml-2"
                     type="warning"
                   >
-                    Truncated to 1000
+                    已截断为 1000 条
                   </el-tag>
                 </div>
                 <div class="flex gap-2">
                   <el-button size="small" @click="exportCSV" :icon="'Download'">
-                    Export CSV
+                    导出 CSV
                   </el-button>
                   <el-button
                     size="small"
                     @click="exportJSON"
                     :icon="'Download'"
                   >
-                    Export JSON
+                    导出 JSON
                   </el-button>
                 </div>
               </div>

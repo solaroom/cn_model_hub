@@ -12,28 +12,28 @@ const count = ref(0);
   <h1>{{ msg }}</h1>
 
   <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
+    <button type="button" @click="count++">计数为 {{ count }}</button>
     <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
+      编辑
+      <code>components/HelloWorld.vue</code> 用于测试 HMR
     </p>
   </div>
 
   <p>
-    Check out
+    查看
     <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
       >create-vue</a
-    >, the official Vue + Vite starter
+    >, 官方 Vue + Vite 起始模板
   </p>
   <p>
-    Learn more about IDE Support for Vue in the
+    在这里了解 Vue 的 IDE 支持：
     <a
       href="https://vuejs.org/guide/scaling-up/tooling.html#ide-support"
       target="_blank"
-      >Vue Docs Scaling up Guide</a
+      >Vue 文档进阶指南</a
     >.
   </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+  <p class="read-the-docs">点击 Vite 和 Vue 标志了解更多</p>
 </template>
 
 <style scoped>

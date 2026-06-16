@@ -1,4 +1,4 @@
-// src/kohaku-hub-ui/src/utils/tar-thumbnail.js
+// src/cn-model-hub-ui/src/utils/tar-thumbnail.js
 //
 // Pure-client thumbnail extraction for image members inside an
 // hfutils.index TAR. Goal: render a small (~128 px) JPEG preview in

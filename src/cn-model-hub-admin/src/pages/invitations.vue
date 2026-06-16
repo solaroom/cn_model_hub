@@ -199,23 +199,23 @@ onMounted(() => {
     <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Registration Invitations
+          注册邀请
         </h1>
         <el-button type="primary" @click="dialogVisible = true" :icon="'Plus'">
-          Generate Invitation
+          生成邀请
         </el-button>
       </div>
 
       <!-- Filter -->
       <el-card class="mb-4">
         <div class="flex items-center gap-4">
-          <span class="font-semibold">Filter by Type:</span>
+          <span class="font-semibold">按类型筛选：</span>
           <el-radio-group v-model="filterAction" @change="loadInvitations">
-            <el-radio-button label="all">All Invitations</el-radio-button>
+            <el-radio-button label="all">全部邀请</el-radio-button>
             <el-radio-button label="register_account"
-              >Registration</el-radio-button
+              >注册</el-radio-button
             >
-            <el-radio-button label="join_org">Organization</el-radio-button>
+            <el-radio-button label="join_org">组织</el-radio-button>
           </el-radio-group>
         </div>
       </el-card>
@@ -224,14 +224,14 @@ onMounted(() => {
       <el-card class="mb-6">
         <template #header>
           <div class="flex items-center justify-between">
-            <span class="font-semibold">All Invitations</span>
+            <span class="font-semibold">全部邀请</span>
             <el-button
               size="small"
               @click="loadInvitations"
               :icon="'Refresh'"
               :loading="loading"
             >
-              Refresh
+              刷新
             </el-button>
           </div>
         </template>
@@ -262,10 +262,10 @@ onMounted(() => {
                 <div v-else-if="row.org_name" class="font-medium">
                   {{ row.org_name }} ({{ row.role }})
                 </div>
-                <div v-else class="text-gray-500">General Link</div>
+                <div v-else class="text-gray-500">通用链接</div>
                 <div v-if="row.is_reusable" class="text-xs text-gray-500 mt-1">
-                  <el-tag size="small" type="success">Reusable</el-tag>
-                  Usage: {{ row.usage_count }} /
+                  <el-tag size="small" type="success">可复用</el-tag>
+                  使用次数： {{ row.usage_count }} /
                   {{ row.max_usage === -1 ? "∞" : row.max_usage || 1 }}
                 </div>
               </div>
@@ -305,7 +305,7 @@ onMounted(() => {
                 @click="handleCopyInvitationLink(row.token, row.action)"
                 :icon="'CopyDocument'"
               >
-                Copy Link
+                复制链接
               </el-button>
               <el-button
                 size="small"
@@ -313,7 +313,7 @@ onMounted(() => {
                 @click="handleDeleteInvitation(row)"
                 :icon="'Delete'"
               >
-                Delete
+                删除
               </el-button>
             </template>
           </el-table-column>
@@ -330,7 +330,7 @@ onMounted(() => {
         <template #header>
           <div class="flex items-center gap-2">
             <div class="i-carbon-information text-xl" />
-            <span class="font-semibold">About Registration Invitations</span>
+            <span class="font-semibold">关于注册邀请</span>
           </div>
         </template>
 
@@ -464,7 +464,7 @@ onMounted(() => {
             type="primary"
             @click="handleCreateInvitation"
           >
-            Generate Invitation
+            生成邀请
           </el-button>
         </template>
       </el-dialog>

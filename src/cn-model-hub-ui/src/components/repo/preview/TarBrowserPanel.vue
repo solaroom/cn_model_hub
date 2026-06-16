@@ -433,8 +433,8 @@ watch(innerPreviewProps, (val) => {
       <p
         class="mt-1 text-xs text-gray-400 dark:text-gray-500 max-w-md text-center"
       >
-        Reading the index sidecar (.json next to the .tar). The .tar
-        itself is only Range-read for individual member previews.
+        正在读取索引旁路文件（.tar 旁边的 .json）。.tar
+        本身只会在预览单个成员时按范围读取。
       </p>
     </div>
 
@@ -457,17 +457,17 @@ watch(innerPreviewProps, (val) => {
           type="warning"
           :closable="false"
           show-icon
-          title="Tar hash does not match the sidecar index"
+          title="Tar 哈希与旁路索引不匹配"
         >
           <template #default>
             <div class="text-xs">
-              The .tar file's sha256
+              该 .tar 文件的 sha256
               <code>{{ hashCheck.actual.slice(0, 16) }}…</code>
-              does not match the
-              <code>hash_lfs</code> recorded in the .json sidecar
+              不匹配
+              <code>hash_lfs</code> 记录在 .json 旁路文件中的值
               (<code>{{ hashCheck.expected.slice(0, 16) }}…</code>). The
-              archive may have been re-uploaded without regenerating the
-              index — member offsets may be incorrect or outdated.
+              归档可能已重新上传但未重新生成
+              索引，成员偏移量可能不正确或已过期。
             </div>
           </template>
         </el-alert>
@@ -484,10 +484,10 @@ watch(innerPreviewProps, (val) => {
         >
           <template #default>
             <div class="text-xs">
-              The .json sidecar does not carry a tar hash, so consistency
-              with the actual .tar cannot be verified. Listings and
-              previews are still served, but a stale or rewritten archive
-              would not be detected here.
+              该 .json 旁路文件不包含 tar 哈希，因此无法校验
+              其与实际 .tar 的一致性。列表和
+              预览仍会提供，但陈旧或被重写的归档
+              不会在这里被检测出来。
             </div>
           </template>
         </el-alert>
@@ -504,8 +504,8 @@ watch(innerPreviewProps, (val) => {
         >
           <template #default>
             <div class="text-xs">
-              Could not verify the tar against the sidecar index — one
-              side does not advertise a hash in a comparable shape.
+              无法用旁路索引校验 tar，因为其中一方
+              没有提供可比较格式的哈希。
             </div>
           </template>
         </el-alert>

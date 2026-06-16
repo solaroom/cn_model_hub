@@ -7,7 +7,7 @@
         class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-blue-600 mb-4"
       ></div>
       <p class="text-xl text-gray-600 dark:text-gray-400">
-        Loading repositories...
+        正在加载仓库...
       </p>
     </div>
 
@@ -16,16 +16,16 @@
       <div
         class="i-carbon-group text-8xl text-gray-300 dark:text-gray-600 mb-6 inline-block"
       />
-      <h1 class="text-4xl font-bold mb-4">Organization Not Found</h1>
+      <h1 class="text-4xl font-bold mb-4">组织不存在</h1>
       <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">
-        The organization "<span
+        组织 “<span
           class="font-mono text-blue-600 dark:text-blue-400"
           >{{ orgname }}</span
-        >" does not exist.
+        >” 不存在。
       </p>
       <el-button type="primary" @click="$router.push('/')">
         <div class="i-carbon-home mr-2" />
-        Go to Homepage
+        返回首页
       </el-button>
     </div>
 
@@ -38,7 +38,7 @@
             <div>
               <h2 class="text-xl font-bold">{{ orgname }}</h2>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                Organization
+                组织
               </p>
             </div>
           </div>
@@ -60,7 +60,7 @@
         <div class="card">
           <h3 class="font-semibold mb-3 flex items-center gap-2">
             <div class="i-carbon-user-multiple" />
-            Members
+            成员
             <span class="text-sm text-gray-500"
               >({{ members.length || 0 }})</span
             >
@@ -87,13 +87,13 @@
             v-else
             class="text-center py-4 text-sm text-gray-500 dark:text-gray-400"
           >
-            No members yet
+            暂无成员
           </div>
         </div>
 
         <!-- Stats Summary / Tab Navigation -->
         <div class="card">
-          <h3 class="font-semibold mb-3">Repositories</h3>
+          <h3 class="font-semibold mb-3">仓库</h3>
           <div class="space-y-1">
             <RouterLink
               :to="`/organizations/${orgname}`"
@@ -104,7 +104,7 @@
             >
               <div class="flex items-center gap-2 text-sm">
                 <div class="i-carbon-grid text-gray-500 dark:text-gray-400" />
-                <span>Overview</span>
+                <span>概览</span>
               </div>
             </RouterLink>
 
@@ -120,7 +120,7 @@
               <div class="flex items-center gap-2 text-sm">
                 <div class="i-carbon-model text-blue-500" />
                 <span :class="currentType === 'models' ? 'font-semibold' : ''"
-                  >Models</span
+                  >模型</span
                 >
               </div>
               <span
@@ -142,7 +142,7 @@
               <div class="flex items-center gap-2 text-sm">
                 <div class="i-carbon-data-table text-green-500" />
                 <span :class="currentType === 'datasets' ? 'font-semibold' : ''"
-                  >Datasets</span
+                  >数据集</span
                 >
               </div>
               <span
@@ -164,7 +164,7 @@
               <div class="flex items-center gap-2 text-sm">
                 <div class="i-carbon-application text-purple-500" />
                 <span :class="currentType === 'spaces' ? 'font-semibold' : ''"
-                  >Spaces</span
+                  >空间</span
                 >
               </div>
               <span
@@ -191,7 +191,7 @@
             <div class="flex items-center gap-3 ml-auto">
               <el-select
                 v-model="selectedSort"
-                placeholder="Sort repositories"
+                placeholder="仓库排序"
                 class="w-44 sm:w-56"
               >
                 <el-option
@@ -258,7 +258,7 @@
                     @click.stop="openExternalRepo(repo)"
                   >
                     <div class="i-carbon-launch inline-block mr-1" />
-                    View on {{ repo._source }}
+                    查看 {{ repo._source }}
                   </el-button>
                 </div>
 

@@ -294,7 +294,7 @@ const previewTitle = computed(() => {
         {{ phase }}
       </p>
       <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 max-w-md text-center">
-        Reading only the file header (typically &lt; 100 KB). The file itself is not downloaded.
+        仅读取文件头（通常小于 100 KB），不会下载完整文件。
       </p>
     </div>
 
@@ -309,7 +309,7 @@ const previewTitle = computed(() => {
     <div v-else-if="state === 'ready' && payload?.kind === 'safetensors'">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded">
-          <div class="text-xs text-gray-500 dark:text-gray-400">Tensors</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">张量</div>
           <div class="text-lg font-semibold mt-1">
             {{ Object.keys(payload.header.tensors).length }}
           </div>
@@ -327,7 +327,7 @@ const previewTitle = computed(() => {
             <div
               class="i-carbon-arrows-horizontal text-[10px] opacity-60 flex-shrink-0"
             />
-            <span>Total parameters</span>
+            <span>参数总量</span>
           </div>
           <div class="text-lg font-semibold mt-1">
             {{ totalParamsDisplay }}
@@ -335,17 +335,17 @@ const previewTitle = computed(() => {
         </div>
         <div
           class="p-3 bg-gray-50 dark:bg-gray-800 rounded"
-          :title="`${formatBytesExact(payload.summary.byte_size)} bytes`"
+          :title="`${formatBytesExact(payload.summary.byte_size)} 字节`"
         >
           <div class="text-xs text-gray-500 dark:text-gray-400">
-            Tensor bytes
+            张量字节数
           </div>
           <div class="text-lg font-semibold mt-1">
             {{ formatBytes(payload.summary.byte_size) }}
           </div>
         </div>
         <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded">
-          <div class="text-xs text-gray-500 dark:text-gray-400">Dtypes</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">数据类型</div>
           <div class="text-sm font-medium mt-1 break-words">
             {{ Object.keys(payload.summary.parameters).join(", ") || "-" }}
           </div>
@@ -353,14 +353,14 @@ const previewTitle = computed(() => {
       </div>
 
       <div class="mb-4">
-        <h4 class="text-sm font-semibold mb-2">Parameters by dtype</h4>
+        <h4 class="text-sm font-semibold mb-2">按数据类型统计参数</h4>
         <el-table
           :data="Object.entries(payload.summary.parameters).map(([dtype, count]) => ({ dtype, count }))"
           size="small"
           :border="true"
         >
           <el-table-column prop="dtype" label="dtype" width="140" />
-          <el-table-column label="Parameters">
+          <el-table-column label="参数">
             <template #default="{ row }">
               {{ formatNumber(row.count) }}
             </template>
@@ -439,7 +439,7 @@ const previewTitle = computed(() => {
                 <div
                   class="i-carbon-arrows-horizontal text-[10px] opacity-60 flex-shrink-0"
                 />
-                <span>Parameters</span>
+                <span>参数</span>
               </span>
             </template>
             <template #default="{ row }">
@@ -483,7 +483,7 @@ const previewTitle = computed(() => {
                 509,452 bytes for a bug report or a sanity-check
                 against the safetensors header math.
               -->
-              <span :title="`${formatBytesExact(row.byteSize)} bytes`">
+              <span :title="`${formatBytesExact(row.byteSize)} 字节`">
                 {{ formatBytes(row.byteSize) }}
               </span>
             </template>
@@ -565,7 +565,7 @@ const previewTitle = computed(() => {
     </div>
 
     <template #footer>
-      <el-button @click="dialogVisible = false">Close</el-button>
+      <el-button @click="dialogVisible = false">关闭</el-button>
     </template>
   </el-dialog>
 </template>

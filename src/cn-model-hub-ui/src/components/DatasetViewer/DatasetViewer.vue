@@ -186,12 +186,12 @@ const stats = computed(() => {
             v-if="stats"
             class="text-sm text-gray-600 dark:text-gray-400 mt-1"
           >
-            {{ stats.columns }} columns × {{ stats.rows }} rows
+            {{ stats.columns }} 列 × {{ stats.rows }} 行
             <span
               v-if="stats.truncated"
               class="text-yellow-600 dark:text-yellow-400"
             >
-              (truncated to {{ stats.maxRows }} rows)
+              (truncated to {{ stats.maxRows }} 行)
             </span>
             <span v-if="stats.fileSize !== 'Unknown'" class="ml-2">
               · {{ stats.fileSize }}
@@ -212,7 +212,7 @@ const stats = computed(() => {
         v-if="selectedTARFile"
         class="mt-2 text-sm text-gray-600 dark:text-gray-400"
       >
-        Viewing: {{ selectedTARFile.name }} ({{
+        正在查看： {{ selectedTARFile.name }} ({{
           formatBytes(selectedTARFile.size)
         }})
       </div>
@@ -224,13 +224,13 @@ const stats = computed(() => {
         class="spinner inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
       ></div>
       <div class="mt-2 text-gray-600 dark:text-gray-400">
-        Loading preview...
+        正在加载预览...
       </div>
     </div>
 
     <!-- Error state -->
     <div v-else-if="error" class="error p-8 text-center">
-      <div class="text-red-600 dark:text-red-400 text-lg">⚠️ Error</div>
+      <div class="text-red-600 dark:text-red-400 text-lg">⚠️ 错误</div>
       <div class="mt-2 text-gray-700 dark:text-gray-300">{{ error }}</div>
     </div>
 
@@ -254,7 +254,7 @@ const stats = computed(() => {
       v-else
       class="no-data p-8 text-center text-gray-600 dark:text-gray-400"
     >
-      No data to display
+      没有可显示的数据
     </div>
   </div>
 </template>

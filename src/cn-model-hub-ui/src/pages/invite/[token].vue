@@ -10,10 +10,10 @@
       <!-- Error State -->
       <div v-else-if="error" class="card text-center py-12">
         <div class="i-carbon-warning text-6xl text-red-500 mb-4 inline-block" />
-        <h2 class="text-2xl font-bold text-red-600 mb-2">Invalid Invitation</h2>
+        <h2 class="text-2xl font-bold text-red-600 mb-2">邀请无效</h2>
         <p class="text-gray-600 dark:text-gray-400 mb-4">{{ error }}</p>
         <el-button type="primary" @click="$router.push('/')">
-          Go to Home
+          返回首页
         </el-button>
       </div>
 
@@ -24,9 +24,9 @@
           <div
             class="i-carbon-email text-6xl text-blue-500 mb-4 inline-block"
           />
-          <h1 class="text-3xl font-bold mb-2">Organization Invitation</h1>
+          <h1 class="text-3xl font-bold mb-2">组织邀请</h1>
           <p class="text-gray-600 dark:text-gray-400">
-            You've been invited to join an organization
+            你已被邀请加入一个组织
           </p>
         </div>
 
@@ -35,38 +35,38 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-gray-600 dark:text-gray-400"
-                >Organization:</span
+                >组织：</span
               >
               <span class="font-semibold text-lg">{{
                 invitation.org_name
               }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-600 dark:text-gray-400">Role:</span>
+              <span class="text-gray-600 dark:text-gray-400">角色：</span>
               <el-tag :type="getRoleType(invitation.role)">
                 {{ getRoleLabel(invitation.role) }}
               </el-tag>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-600 dark:text-gray-400">Invited by:</span>
+              <span class="text-gray-600 dark:text-gray-400">邀请人：</span>
               <span class="font-medium">{{ invitation.inviter_username }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-600 dark:text-gray-400">Expires:</span>
+              <span class="text-gray-600 dark:text-gray-400">过期时间：</span>
               <span>{{ formatDate(invitation.expires_at) }}</span>
             </div>
             <div
               v-if="invitation.is_reusable"
               class="flex items-center justify-between"
             >
-              <span class="text-gray-600 dark:text-gray-400">Type:</span>
-              <el-tag type="success" size="small">Reusable Link</el-tag>
+              <span class="text-gray-600 dark:text-gray-400">类型：</span>
+              <el-tag type="success" size="small">可复用链接</el-tag>
             </div>
             <div
               v-if="invitation.is_reusable"
               class="flex items-center justify-between"
             >
-              <span class="text-gray-600 dark:text-gray-400">Usage:</span>
+              <span class="text-gray-600 dark:text-gray-400">使用次数：</span>
               <span class="font-mono text-sm">
                 {{ invitation.usage_count }} /
                 {{
@@ -88,7 +88,7 @@
             <div class="i-carbon-warning text-xl text-yellow-600" />
             <div>
               <h3 class="font-semibold text-yellow-800 dark:text-yellow-200">
-                Invitation Unavailable
+                邀请不可用
               </h3>
               <p class="text-sm text-yellow-700 dark:text-yellow-300">
                 {{
@@ -109,12 +109,12 @@
             <div class="i-carbon-information text-xl text-blue-600" />
             <div>
               <h3 class="font-semibold text-blue-800 dark:text-blue-200">
-                Reusable Invitation
+                可复用邀请
               </h3>
               <p class="text-sm text-blue-700 dark:text-blue-300">
-                This link has been used {{ invitation.usage_count }} time{{
+                此链接已使用 {{ invitation.usage_count }} 次{{
                   invitation.usage_count !== 1 ? "s" : ""
-                }}. You can still use it to join the organization.
+                }}。你仍可以用它加入该组织。
               </p>
             </div>
           </div>
@@ -125,10 +125,10 @@
           <!-- Not logged in -->
           <template v-if="!authStore.isAuthenticated">
             <el-button type="primary" size="large" @click="goToLogin">
-              Log In to Accept
+              登录并接受
             </el-button>
             <el-button size="large" @click="goToRegister">
-              Create Account
+              创建账号
             </el-button>
           </template>
 
@@ -140,17 +140,17 @@
               @click="acceptInvitation"
               :loading="accepting"
             >
-              Accept Invitation
+              接受邀请
             </el-button>
             <el-button size="large" @click="$router.push('/')">
-              Decline
+              拒绝
             </el-button>
           </template>
 
           <!-- Cannot accept -->
           <template v-else>
             <el-button type="primary" size="large" @click="$router.push('/')">
-              Go to Home
+              返回首页
             </el-button>
           </template>
         </div>

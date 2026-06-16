@@ -6,19 +6,19 @@
         :to="`/organizations/${$route.params.org}`"
         class="text-blue-600 hover:underline"
       >
-        ← Back to {{ $route.params.org }}
+        ← 返回 {{ $route.params.org }}
       </router-link>
     </div>
 
-    <h1 class="text-3xl font-bold mb-6">Organization Settings</h1>
+    <h1 class="text-3xl font-bold mb-6">组织设置</h1>
 
     <el-tabs v-model="activeTab">
       <!-- General Settings Tab -->
-      <el-tab-pane label="General" name="general">
+      <el-tab-pane label="通用" name="general">
         <div class="max-w-2xl">
           <!-- Avatar Section -->
           <div class="card mb-4">
-            <h2 class="text-xl font-semibold mb-4">Organization Avatar</h2>
+            <h2 class="text-xl font-semibold mb-4">组织头像</h2>
             <AvatarUpload
               entity-type="org"
               :entity-name="$route.params.org"
@@ -30,49 +30,49 @@
           </div>
 
           <div class="card">
-            <h2 class="text-xl font-semibold mb-4">Organization Profile</h2>
+            <h2 class="text-xl font-semibold mb-4">组织资料</h2>
             <el-form label-position="top">
-              <el-form-item label="Organization Name">
+              <el-form-item label="组织名称">
                 <el-input :value="$route.params.org" disabled />
                 <div class="text-sm text-gray-500 mt-1">
-                  Organization name cannot be changed
+                  组织名称不可修改
                 </div>
               </el-form-item>
 
-              <el-form-item label="Description">
+              <el-form-item label="描述">
                 <el-input
                   v-model="generalForm.description"
                   type="textarea"
                   :rows="3"
-                  placeholder="A short description of your organization"
+                  placeholder="组织的简短描述"
                   maxlength="500"
                   show-word-limit
                 />
               </el-form-item>
 
-              <el-form-item label="Bio">
+              <el-form-item label="简介">
                 <el-input
                   v-model="generalForm.bio"
                   type="textarea"
                   :rows="3"
-                  placeholder="Additional details about your organization"
+                  placeholder="组织的更多介绍"
                   maxlength="500"
                   show-word-limit
                 />
               </el-form-item>
 
-              <el-form-item label="Website">
+              <el-form-item label="网站">
                 <el-input
                   v-model="generalForm.website"
                   placeholder="https://example.com"
                 />
               </el-form-item>
 
-              <el-form-item label="Social Media">
+              <el-form-item label="社交媒体">
                 <div class="space-y-2">
                   <el-input
                     v-model="generalForm.social_media.twitter_x"
-                    placeholder="Twitter/X username"
+                    placeholder="Twitter/X 用户名"
                   >
                     <template #prepend>
                       <div class="i-carbon-logo-x w-4 h-4" />

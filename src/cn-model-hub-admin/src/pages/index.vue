@@ -242,7 +242,7 @@ onMounted(() => {
         v-if="
           quotaOverview &&
           (quotaOverview.users_over_quota.length > 0 ||
-            quotaOverview.repos_over_quota.length > 0)
+            quota概览.repos_over_quota.length > 0)
         "
         class="mb-6"
       >

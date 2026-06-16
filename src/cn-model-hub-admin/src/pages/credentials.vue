@@ -241,12 +241,12 @@ onMounted(() => {
       <div class="flex justify-between items-center mb-6 gap-4 flex-wrap">
         <div>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Credentials
+            凭据
           </h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Sessions, API tokens and SSH keys across every user. Use this view
-            to investigate a leak, clean up after an offboarding, or kill a
-            misbehaving CI client.
+            查看所有用户的会话、API Token 和 SSH 密钥。可用此视图
+            排查泄露、清理离职账号，或终止
+            异常的 CI 客户端。
           </p>
         </div>
         <el-button
@@ -256,7 +256,7 @@ onMounted(() => {
           data-testid="credentials-open-bulk"
         >
           <div class="i-carbon-trash-can mr-1" />
-          Bulk revoke
+          批量吊销
         </el-button>
       </div>
 
@@ -264,7 +264,7 @@ onMounted(() => {
         <div class="flex items-center gap-3 flex-wrap">
           <el-input
             v-model="userFilter"
-            placeholder="Filter by username..."
+            placeholder="按用户名筛选..."
             clearable
             style="max-width: 240px"
             @keyup.enter="loadActiveTab"
@@ -274,7 +274,7 @@ onMounted(() => {
             v-if="showUnusedFilter"
             v-model="unusedForDaysFilter"
             :min="0"
-            placeholder="Unused for N+ days"
+            placeholder="N 天以上未使用"
             controls-position="right"
             style="width: 200px"
             data-testid="credentials-unused-filter"
@@ -284,7 +284,7 @@ onMounted(() => {
             v-model="onlyActiveSessions"
             data-testid="credentials-active-only"
           >
-            Only active (not expired)
+            仅活跃（未过期）
           </el-checkbox>
           <el-button
             type="primary"
@@ -292,13 +292,13 @@ onMounted(() => {
             @click="loadActiveTab"
             data-testid="credentials-apply"
           >
-            Apply
+            应用
           </el-button>
         </div>
       </el-card>
 
       <el-tabs v-model="activeTab" data-testid="credentials-tabs">
-        <el-tab-pane label="Sessions" name="sessions">
+        <el-tab-pane label="会话" name="sessions">
           <el-table
             v-loading="loading"
             :data="sessions"
@@ -306,8 +306,8 @@ onMounted(() => {
             data-testid="credentials-sessions-table"
           >
             <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="username" label="User" width="160" />
-            <el-table-column label="Created" width="200">
+            <el-table-column prop="username" label="用户" width="160" />
+            <el-table-column label="创建时间" width="200">
               <template #default="{ row }">
                 {{ formatDate(row.created_at) }}
               </template>
@@ -332,7 +332,7 @@ onMounted(() => {
                   @click="revokeSession(row)"
                   data-testid="credentials-revoke-session"
                 >
-                  Revoke
+                  吊销
                 </el-button>
               </template>
             </el-table-column>
@@ -376,7 +376,7 @@ onMounted(() => {
                   @click="revokeToken(row)"
                   data-testid="credentials-revoke-token"
                 >
-                  Revoke
+                  吊销
                 </el-button>
               </template>
             </el-table-column>
@@ -426,7 +426,7 @@ onMounted(() => {
                   @click="revokeSshKey(row)"
                   data-testid="credentials-revoke-ssh-key"
                 >
-                  Revoke
+                  吊销
                 </el-button>
               </template>
             </el-table-column>
@@ -469,13 +469,13 @@ onMounted(() => {
           </p>
         </el-form>
         <template #footer>
-          <el-button @click="bulkRevokeOpen = false">Cancel</el-button>
+          <el-button @click="bulkRevokeOpen = false">取消</el-button>
           <el-button
             type="warning"
             @click="submitBulkRevoke"
             data-testid="credentials-bulk-submit"
           >
-            Revoke matching sessions
+            吊销匹配会话
           </el-button>
         </template>
       </el-dialog>

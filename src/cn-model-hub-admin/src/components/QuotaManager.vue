@@ -158,7 +158,7 @@ onUnmounted(() => {
       <template #header>
         <div class="flex justify-between items-center">
           <span class="text-xl font-semibold">
-            Quota Information - {{ namespace }} ({{
+            配额信息 - {{ namespace }} ({{
               isOrg ? "Organization" : "User"
             }})
           </span>
@@ -170,7 +170,7 @@ onUnmounted(() => {
               :icon="'Edit'"
               size="small"
             >
-              Edit Quota
+              编辑配额
             </el-button>
             <el-button
               @click="handleRecalculate"
@@ -178,7 +178,7 @@ onUnmounted(() => {
               :icon="'Renew'"
               size="small"
             >
-              Recalculate
+              重新计算
             </el-button>
           </div>
         </div>

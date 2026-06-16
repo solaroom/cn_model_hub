@@ -8,7 +8,7 @@
           to="/"
           class="text-blue-600 dark:text-blue-400 hover:underline"
         >
-          Home
+          首页
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item>
@@ -42,7 +42,7 @@
         </RouterLink>
       </el-breadcrumb-item>
       <el-breadcrumb-item
-        >Commit {{ commitId?.substring(0, 8) }}</el-breadcrumb-item
+        >提交 {{ commitId?.substring(0, 8) }}</el-breadcrumb-item
       >
     </el-breadcrumb>
 
@@ -56,10 +56,10 @@
     <!-- Error State -->
     <div v-else-if="error" class="text-center py-20">
       <div class="i-carbon-warning text-6xl text-red-500 mb-4 inline-block" />
-      <h2 class="text-2xl font-bold mb-2">Failed to Load Commit</h2>
+      <h2 class="text-2xl font-bold mb-2">提交加载失败</h2>
       <p class="text-gray-600 dark:text-gray-400">{{ error }}</p>
       <el-button type="primary" @click="$router.back()" class="mt-4">
-        Go Back
+        返回
       </el-button>
     </div>
 
@@ -111,11 +111,11 @@
         <div class="flex gap-3 mb-4">
           <el-button size="small" @click="showRevertDialog" class="btn-revert">
             <div class="i-carbon-undo inline-block mr-1" />
-            Revert Commit
+            还原提交
           </el-button>
           <el-button type="primary" size="small" @click="showResetDialog">
             <div class="i-carbon-reset inline-block mr-1" />
-            Reset to This State
+            重置到此状态
           </el-button>
         </div>
 
@@ -125,7 +125,7 @@
           class="pt-3 border-t border-gray-200 dark:border-gray-700"
         >
           <div class="flex items-center gap-2 text-sm">
-            <span class="text-gray-600 dark:text-gray-400">Parent:</span>
+            <span class="text-gray-600 dark:text-gray-400">父提交：</span>
             <code
               class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs"
             >
@@ -138,12 +138,12 @@
       <!-- Revert Dialog -->
       <el-dialog
         v-model="revertDialogVisible"
-        title="Revert Commit"
+        title="还原提交"
         width="500px"
       >
         <div class="space-y-4">
           <p class="text-gray-700 dark:text-gray-300">
-            This will create a new commit that undoes the changes from commit
+            这会创建一个新提交，用于撤销该提交中的变更
             <code
               class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs"
             >
@@ -153,8 +153,8 @@
 
           <el-alert type="warning" :closable="false" show-icon>
             <template #title>
-              Revert creates a new commit that undoes changes. It does not
-              delete history.
+              还原会创建一个撤销变更的新提交，不会
+              删除历史。
             </template>
           </el-alert>
 
@@ -179,9 +179,9 @@
         </div>
 
         <template #footer>
-          <el-button @click="revertDialogVisible = false">Cancel</el-button>
+          <el-button @click="revertDialogVisible = false">取消</el-button>
           <el-button type="warning" @click="doRevert" :loading="reverting">
-            Revert
+            还原
           </el-button>
         </template>
       </el-dialog>
@@ -205,8 +205,8 @@
 
           <el-alert type="info" :closable="false" show-icon>
             <template #title>
-              Reset creates a new commit. History is preserved - newer commits
-              remain accessible.
+              重置会创建一个新提交。历史会保留，较新的提交
+              仍可访问。
             </template>
           </el-alert>
 
@@ -243,9 +243,9 @@
         </div>
 
         <template #footer>
-          <el-button @click="resetDialogVisible = false">Cancel</el-button>
+          <el-button @click="resetDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="doReset" :loading="resetting">
-            Create Reset Commit
+            创建重置提交
           </el-button>
         </template>
       </el-dialog>
@@ -297,7 +297,7 @@
                     >LFS</el-tag
                   >
                   <el-tag v-if="file.diff" type="info" size="small"
-                    >Diff</el-tag
+                    >差异</el-tag
                   >
                 </div>
 

@@ -209,7 +209,7 @@ function closeMediaModal() {
       class="warning p-3 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-700"
     >
       <span class="text-yellow-800 dark:text-yellow-200">
-        Showing first {{ rows.length }} rows. File contains more data.
+        正在显示前 {{ rows.length }} 行。文件还包含更多数据。
       </span>
     </div>
 
@@ -274,7 +274,7 @@ function closeMediaModal() {
               <div v-if="isImage(value)" class="flex items-center gap-2">
                 <img
                   :src="getMediaUrl(value)"
-                  alt="Thumbnail"
+                  alt="缩略图"
                   class="w-16 h-16 object-cover rounded border border-gray-300 dark:border-gray-600 cursor-pointer hover:opacity-80"
                   @click.stop="openMediaModal(value, 'image')"
                 />
@@ -318,8 +318,8 @@ function closeMediaModal() {
       class="p-3 text-center border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
     >
       <div class="text-xs text-gray-600 dark:text-gray-400">
-        Showing {{ displayedRowCount }} of {{ sortedRows.length }} rows - scroll
-        down for more
+        正在显示 {{ displayedRowCount }} / {{ sortedRows.length }} 行 - 滚动
+        向下查看更多
       </div>
     </div>
 
@@ -328,7 +328,7 @@ function closeMediaModal() {
       v-if="rows.length === 0"
       class="empty-state p-8 text-center text-gray-600 dark:text-gray-400"
     >
-      No rows to display
+      没有可显示的行
     </div>
 
     <!-- Media Modal -->

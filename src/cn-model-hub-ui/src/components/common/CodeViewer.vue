@@ -8,13 +8,13 @@
         <el-tag size="small" type="info">{{ language }}</el-tag>
         <span
           class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap"
-          >{{ lineCount }} lines</span
+          >{{ lineCount }} 行</span
         >
       </div>
       <el-button size="small" @click="copyCode" class="flex-shrink-0">
         <div class="i-carbon-copy inline-block mr-1" />
-        <span class="hidden sm:inline">Copy</span>
-        <span class="sm:hidden">Copy</span>
+        <span class="hidden sm:inline">复制</span>
+        <span class="sm:hidden">复制</span>
       </el-button>
     </div>
 
@@ -22,8 +22,8 @@
       <table class="code-table">
         <thead class="sr-only">
           <tr>
-            <th scope="col">Line Number</th>
-            <th scope="col">Code Content</th>
+            <th scope="col">行号</th>
+            <th scope="col">代码内容</th>
           </tr>
         </thead>
         <tbody>

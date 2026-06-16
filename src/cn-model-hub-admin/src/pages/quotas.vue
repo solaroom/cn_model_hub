@@ -19,7 +19,7 @@ onMounted(() => {
 
 <template>
   <div class="redirect-page">
-    <p>Redirecting to Quota Overview...</p>
+    <p>正在跳转到配额概览...</p>
   </div>
 </template>
 

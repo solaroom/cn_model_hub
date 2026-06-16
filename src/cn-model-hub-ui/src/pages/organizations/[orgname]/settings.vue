@@ -2,29 +2,29 @@
 <template>
   <div class="container-main">
     <h1 class="text-3xl font-bold mb-6">
-      Organization Settings: {{ route.params.orgname }}
+      组织设置： {{ route.params.orgname }}
     </h1>
 
     <el-tabs v-model="activeTab">
       <!-- General Settings -->
-      <el-tab-pane label="General" name="general">
+      <el-tab-pane label="通用" name="general">
         <div class="max-w-2xl">
           <div class="card">
-            <h2 class="text-xl font-semibold mb-4">General Information</h2>
+            <h2 class="text-xl font-semibold mb-4">基本信息</h2>
             <el-form label-position="top">
-              <el-form-item label="Organization Name">
+              <el-form-item label="组织名称">
                 <el-input :value="route.params.orgname" disabled />
               </el-form-item>
-              <el-form-item label="Description">
+              <el-form-item label="描述">
                 <el-input
                   v-model="orgSettings.description"
                   type="textarea"
                   :rows="3"
-                  placeholder="Describe your organization..."
+                  placeholder="描述你的组织..."
                 />
               </el-form-item>
               <el-button type="primary" @click="saveGeneralSettings">
-                Save Changes
+                保存更改
               </el-button>
             </el-form>
           </div>
@@ -32,31 +32,31 @@
       </el-tab-pane>
 
       <!-- Members -->
-      <el-tab-pane label="Members" name="members">
+      <el-tab-pane label="成员" name="members">
         <div class="max-w-2xl">
           <!-- Add Member -->
           <div class="card mb-4">
-            <h2 class="text-xl font-semibold mb-4">Add Member</h2>
+            <h2 class="text-xl font-semibold mb-4">添加成员</h2>
             <el-form inline>
-              <el-form-item label="Username">
+              <el-form-item label="用户名">
                 <el-input v-model="newMember.username" placeholder="username" />
               </el-form-item>
               <el-form-item label="Role">
                 <el-select v-model="newMember.role">
-                  <el-option label="Member" value="member" />
-                  <el-option label="Admin" value="admin" />
-                  <el-option label="Super Admin" value="super-admin" />
+                  <el-option label="成员" value="member" />
+                  <el-option label="管理员" value="admin" />
+                  <el-option label="超级管理员" value="super-admin" />
                 </el-select>
               </el-form-item>
               <el-button type="primary" @click="handleAddMember">
-                Add Member
+                添加成员
               </el-button>
             </el-form>
           </div>
 
           <!-- Members List -->
           <div class="card">
-            <h2 class="text-xl font-semibold mb-4">Current Members</h2>
+            <h2 class="text-xl font-semibold mb-4">当前成员</h2>
             <div v-if="members.length > 0" class="space-y-2">
               <div
                 v-for="member in members"
@@ -72,22 +72,22 @@
                 </div>
                 <div class="flex gap-2">
                   <el-dropdown
-                    @command="(role) => handleUpdateRole(member, role)"
+                    @command="(role) => handleUpdateRole(成员, role)"
                   >
                     <el-button size="small" type="primary">
-                      Change Role
+                      修改角色
                       <div class="i-carbon-chevron-down ml-1" />
                     </el-button>
                     <template #dropdown>
                       <el-dropdown-menu>
                         <el-dropdown-item command="member">
-                          Member
+                          成员
                         </el-dropdown-item>
                         <el-dropdown-item command="admin">
-                          Admin
+                          管理员
                         </el-dropdown-item>
                         <el-dropdown-item command="super-admin">
-                          Super Admin
+                          超级管理员
                         </el-dropdown-item>
                       </el-dropdown-menu>
                     </template>

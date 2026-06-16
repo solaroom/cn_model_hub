@@ -31,7 +31,7 @@ const dialogVisible = computed({
 <template>
   <el-dialog
     v-model="dialogVisible"
-    :title="`Indexed tar · ${filename}`"
+    :title="`Indexed tar · ${文件name}`"
     width="900px"
     top="6vh"
     :close-on-click-modal="false"
@@ -45,7 +45,7 @@ const dialogVisible = computed({
       :tar-tree-entry="tarTreeEntry"
     />
     <template #footer>
-      <el-button @click="dialogVisible = false">Close</el-button>
+      <el-button @click="dialogVisible = false">关闭</el-button>
     </template>
   </el-dialog>
 </template>

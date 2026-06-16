@@ -43,7 +43,7 @@ defineProps({
 <template>
   <div class="probe-report" :data-testid="`${dataTestidPrefix}-report`">
     <div class="probe-report-summary">
-      <strong>Final outcome:</strong>
+      <strong>最终结果：</strong>
       <el-tag
         :type="decisionTagType(report.final_outcome)"
         :data-testid="`${dataTestidPrefix}-final-outcome`"
@@ -51,13 +51,13 @@ defineProps({
         {{ report.final_outcome }}
       </el-tag>
       <span v-if="report.bound_source" class="probe-bound-source">
-        bound to
+        绑定到
         <code :data-testid="`${dataTestidPrefix}-bound-source`">
           {{ report.bound_source.name || report.bound_source.url || "local" }}
         </code>
       </span>
       <span class="probe-duration">
-        {{ report.duration_ms }} ms total
+        {{ report.duration_ms }} 毫秒总计
       </span>
     </div>
     <div class="probe-attempts">
@@ -88,17 +88,17 @@ defineProps({
           </span>
           <span class="probe-attempt-status">
             <span v-if="att.status_code">{{ att.status_code }}</span>
-            <span v-else class="probe-attempt-error">no response</span>
+            <span v-else class="probe-attempt-error">无响应</span>
           </span>
           <span v-if="att.x_error_code" class="probe-attempt-xerror">
-            X-Error-Code: {{ att.x_error_code }}
+            X-错误-Code： {{ att.x_error_code }}
           </span>
           <span class="probe-attempt-ms">
             {{ att.duration_ms }} ms
           </span>
         </div>
         <div v-if="att.upstream_path" class="probe-attempt-path">
-          <span class="probe-label">Upstream:</span>
+          <span class="probe-label">上游：</span>
           <code>{{ att.upstream_path }}</code>
         </div>
         <div
@@ -106,7 +106,7 @@ defineProps({
           class="probe-attempt-headers"
           :data-testid="`${dataTestidPrefix}-attempt-${idx}-headers`"
         >
-          <span class="probe-label">Response headers:</span>
+          <span class="probe-label">响应头：</span>
           <code
             v-for="(val, key) in att.response_headers"
             :key="key"
@@ -120,10 +120,10 @@ defineProps({
           class="probe-attempt-body"
         >
           <summary>
-            Response body preview ({{
+            响应体预览（{{
               att.response_body_preview.length
             }}
-            chars)
+            字符）
           </summary>
           <pre :data-testid="`${dataTestidPrefix}-attempt-${idx}-body`">{{ att.response_body_preview }}</pre>
         </details>
@@ -139,17 +139,17 @@ defineProps({
       :data-testid="`${dataTestidPrefix}-final-response`"
     >
       <h4 class="probe-final-title">
-        Final response (what a production caller would see)
+        最终响应（生产调用方会看到的内容）
       </h4>
       <div class="probe-final-status">
-        <span class="probe-label">Status:</span>
+        <span class="probe-label">状态：</span>
         <strong>{{ report.final_response.status_code }}</strong>
       </div>
       <div
         v-if="report.final_response.headers && Object.keys(report.final_response.headers).length > 0"
         class="probe-final-headers"
       >
-        <span class="probe-label">Headers:</span>
+        <span class="probe-label">响应头：</span>
         <code
           v-for="(val, key) in report.final_response.headers"
           :key="key"
@@ -163,7 +163,7 @@ defineProps({
         open
         class="probe-attempt-body"
       >
-        <summary>Body</summary>
+        <summary>响应体</summary>
         <pre :data-testid="`${dataTestidPrefix}-final-body`">{{ report.final_response.body_preview }}</pre>
       </details>
     </div>

@@ -60,10 +60,10 @@ onMounted(() => {
     <div class="page-container">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Quota Overview
+          配额概览
         </h1>
         <el-button @click="loadOverview" :icon="'Refresh'" :loading="loading">
-          Refresh
+          刷新
         </el-button>
       </div>
 
@@ -73,7 +73,7 @@ onMounted(() => {
           <template #header>
             <div class="flex items-center gap-2">
               <div class="i-carbon-data-volume text-blue-600 text-xl" />
-              <span class="font-bold text-lg">System Storage</span>
+              <span class="font-bold text-lg">系统存储</span>
             </div>
           </template>
 
@@ -124,7 +124,7 @@ onMounted(() => {
                   overview.users_over_quota.length +
                   overview.repos_over_quota.length
                 }}
-                Warning(s) Detected
+                检测到警告
               </span>
             </template>
             Some users or repositories have exceeded their storage quotas.
@@ -136,7 +136,7 @@ onMounted(() => {
               <div class="flex items-center gap-2">
                 <div class="i-carbon-warning-alt text-red-600 text-xl" />
                 <span class="font-bold">
-                  Users Over Quota ({{ overview.users_over_quota.length }})
+                  超额用户 ({{ overview.users_over_quota.length }})
                 </span>
               </div>
             </template>
@@ -197,7 +197,7 @@ onMounted(() => {
                     size="small"
                     @click="navigateToUser(row.username)"
                   >
-                    Manage
+                    管理
                   </el-button>
                 </template>
               </el-table-column>
@@ -210,7 +210,7 @@ onMounted(() => {
               <div class="flex items-center gap-2">
                 <div class="i-carbon-warning-alt text-orange-600 text-xl" />
                 <span class="font-bold">
-                  Repositories Over Quota ({{
+                  超额仓库 ({{
                     overview.repos_over_quota.length
                   }})
                 </span>
@@ -259,7 +259,7 @@ onMounted(() => {
                     size="small"
                     @click="navigateToRepo()"
                   >
-                    View
+                    查看
                   </el-button>
                 </template>
               </el-table-column>
@@ -272,7 +272,7 @@ onMounted(() => {
           <template #header>
             <div class="flex items-center gap-2">
               <div class="i-carbon-chart-bar text-purple-600 text-xl" />
-              <span class="font-bold">Top Storage Consumers</span>
+              <span class="font-bold">存储用量最高</span>
             </div>
           </template>
 
@@ -310,7 +310,7 @@ onMounted(() => {
                     size="small"
                     effect="plain"
                   >
-                    Organization
+                    组织
                   </el-tag>
                 </div>
               </template>
@@ -327,7 +327,7 @@ onMounted(() => {
             <el-table-column label="Action" width="120" align="right">
               <template #default="{ row }">
                 <el-button size="small" @click="navigateToUser(row.username)">
-                  View
+                  查看
                 </el-button>
               </template>
             </el-table-column>
