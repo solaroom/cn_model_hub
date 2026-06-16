@@ -3,9 +3,10 @@
 import atexit
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta, timezone
+from time import sleep
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.config import Config as BotoConfig
 
 from cn_model_hub.async_utils import run_in_s3_executor
@@ -151,43 +152,67 @@ def get_s3_client():
     )
 
 
+def _get_s3_error_code(error: Exception) -> str | None:
+    response = getattr(error, "response", None)
+    if not isinstance(response, dict):
+        return None
+    error_payload = response.get("Error", {})
+    if not isinstance(error_payload, dict):
+        return None
+    return error_payload.get("Code")
+
+
 def init_storage():
     """Check and create the configured S3 bucket if it doesn't exist."""
     s3 = get_s3_client()
     bucket_name = cfg.s3.bucket
     region = cfg.s3.region
+    max_attempts = 10
 
-    try:
-        s3.head_bucket(Bucket=bucket_name)
-        logger.success(f"S3 Bucket '{bucket_name}' already exists.")
-    except Exception as e:
-        # If a 404 error is received, the bucket does not exist
-        error_code = e.response["Error"]["Code"]
-        if error_code == "404":
-            logger.info(f"S3 Bucket '{bucket_name}' not found. Creating it...")
-            try:
-                # MinIO doesn't care about the region for local setup, but S3 requires it
-                if region and region != "us-east-1":
-                    s3.create_bucket(
-                        Bucket=bucket_name,
-                        CreateBucketConfiguration={"LocationConstraint": region},
-                    )
-                else:
-                    s3.create_bucket(Bucket=bucket_name)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            s3.head_bucket(Bucket=bucket_name)
+            logger.success(f"S3 Bucket '{bucket_name}' already exists.")
+            return
+        except Exception as e:
+            error_code = _get_s3_error_code(e)
+            if error_code == "404":
+                logger.info(f"S3 Bucket '{bucket_name}' not found. Creating it...")
+                try:
+                    # MinIO doesn't care about the region for local setup, but S3 requires it
+                    if region and region != "us-east-1":
+                        s3.create_bucket(
+                            Bucket=bucket_name,
+                            CreateBucketConfiguration={"LocationConstraint": region},
+                        )
+                    else:
+                        s3.create_bucket(Bucket=bucket_name)
 
-                logger.success(f"S3 Bucket '{bucket_name}' created successfully.")
-            except ClientError as e:
-                create_error_code = e.response["Error"].get("Code")
-                if create_error_code in ("BucketAlreadyOwnedByYou", "BucketAlreadyExists"):
-                    logger.success(f"S3 Bucket '{bucket_name}' already exists.")
-                else:
+                    logger.success(f"S3 Bucket '{bucket_name}' created successfully.")
+                    return
+                except ClientError as e:
+                    create_error_code = _get_s3_error_code(e)
+                    if create_error_code in (
+                        "BucketAlreadyOwnedByYou",
+                        "BucketAlreadyExists",
+                    ):
+                        logger.success(f"S3 Bucket '{bucket_name}' already exists.")
+                        return
                     logger.exception(f"Failed to create S3 bucket '{bucket_name}'", e)
                     raise
-            except Exception as e:
-                logger.exception(f"Failed to create S3 bucket '{bucket_name}'", e)
-                raise
-        else:
-            # Other error (e.g., 403 Forbidden)
+                except Exception as e:
+                    logger.exception(f"Failed to create S3 bucket '{bucket_name}'", e)
+                    raise
+
+            if isinstance(e, EndpointConnectionError) and attempt < max_attempts:
+                logger.warning(
+                    f"S3 endpoint is not ready; retrying bucket check "
+                    f"({attempt}/{max_attempts})..."
+                )
+                sleep(1)
+                continue
+
+            # Other error (e.g., 403 Forbidden or exhausted endpoint retries)
             logger.exception(f"Error checking S3 bucket '{bucket_name}'", e)
             raise
 
