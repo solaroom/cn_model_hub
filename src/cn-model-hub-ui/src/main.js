@@ -1,9 +1,8 @@
 // src/cn-model-hub-ui/src/main.js
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import { createRouter, createWebHistory } from "vue-router";
-import { routes } from "vue-router/auto-routes";
 import App from "./App.vue";
+import { createAppRouter } from "./router";
 import { initializeBrowserTimezone } from "./utils/datetime";
 import ElementPlus from "element-plus";
 import zhCn from "element-plus/es/locale/lang/zh-cn";
@@ -28,11 +27,7 @@ const pinia = createPinia();
 
 initializeBrowserTimezone();
 
-// Create router
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+const router = createAppRouter();
 
 app.use(pinia);
 app.use(router);

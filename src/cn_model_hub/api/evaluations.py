@@ -53,11 +53,26 @@ dataset_path = Path(sys.argv[2]).resolve()
 output_path = Path(sys.argv[3]).resolve()
 
 tokenizer = AutoTokenizer.from_pretrained(model_dir, local_files_only=True)
-model = AutoModelForCausalLM.from_pretrained(
-    model_dir,
-    local_files_only=True,
-    torch_dtype=torch.float32,
-)
+
+
+def load_model():
+    try:
+        return AutoModelForCausalLM.from_pretrained(
+            model_dir,
+            local_files_only=True,
+            dtype=torch.float32,
+        )
+    except TypeError as exc:
+        if "dtype" not in str(exc):
+            raise
+        return AutoModelForCausalLM.from_pretrained(
+            model_dir,
+            local_files_only=True,
+            torch_dtype=torch.float32,
+        )
+
+
+model = load_model()
 model.eval()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
@@ -89,6 +104,7 @@ def predict(item):
     else:
         text = prompt
     inputs = tokenizer(text, return_tensors="pt").to(device)
+    inputs.pop("token_type_ids", None)
     with torch.no_grad():
         generated = model.generate(
             **inputs,

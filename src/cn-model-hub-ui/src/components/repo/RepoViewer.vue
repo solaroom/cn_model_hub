@@ -529,7 +529,7 @@
               >
                 <RouterLink
                   :to="getEntryHref(file)"
-                  :aria-label="`打开 ${getFileName(文件.path)}`"
+                  :aria-label="`打开 ${getFileName(file.path)}`"
                   class="absolute inset-0 z-10"
                   data-testid="filelist-row-link"
                 />
@@ -548,8 +548,8 @@
                       v-if="canPreviewFileRow(file)"
                       type="button"
                       class="relative z-20 flex-shrink-0 text-gray-400 transition-colors hover:text-blue-500 dark:hover:text-blue-400"
-                      :title="previewIconTitle(文件)"
-                      :aria-label="`预览 ${getFileName(文件.path)} 的元数据`"
+                      :title="previewIconTitle(file)"
+                      :aria-label="`预览 ${getFileName(file.path)} 的元数据`"
                       @click.stop="openFilePreview(file)"
                     >
                       <div :class="previewIconClass(file)" class="text-base" />
@@ -560,7 +560,7 @@
                       v-if="file.lastCommit"
                       :to="getCommitPath(file.lastCommit.id)"
                       class="relative z-20 text-gray-700 underline underline-offset-2 decoration-gray-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-                      :title="文件.last提交.title"
+                      :title="file.lastCommit.title"
                       @click.stop
                     >
                       {{ getEntryCommitTitle(file) }}
@@ -579,7 +579,7 @@
                     v-if="file.lastCommit"
                     :to="getCommitPath(file.lastCommit.id)"
                     class="relative z-20 text-gray-700 underline underline-offset-2 decoration-gray-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-                    :title="文件.last提交.title"
+                    :title="file.lastCommit.title"
                     @click.stop
                   >
                     {{ getEntryCommitTitle(file) }}
