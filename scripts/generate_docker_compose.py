@@ -385,10 +385,10 @@ def generate_hub_api_service(config: dict) -> str:
       - CN_MODEL_HUB_SMTP_TLS=true
 
       ## ===== Storage Quota Configuration (Optional) =====
-      - CN_MODEL_HUB_DEFAULT_USER_PRIVATE_QUOTA_BYTES=10_000_000
-      - CN_MODEL_HUB_DEFAULT_USER_PUBLIC_QUOTA_BYTES=100_000_000
-      - CN_MODEL_HUB_DEFAULT_ORG_PRIVATE_QUOTA_BYTES=10_000_000
-      - CN_MODEL_HUB_DEFAULT_ORG_PUBLIC_QUOTA_BYTES=100_000_000
+      - CN_MODEL_HUB_DEFAULT_USER_PRIVATE_QUOTA_BYTES=30_000_000_000
+      - CN_MODEL_HUB_DEFAULT_USER_PUBLIC_QUOTA_BYTES=30_000_000_000
+      - CN_MODEL_HUB_DEFAULT_ORG_PRIVATE_QUOTA_BYTES=30_000_000_000
+      - CN_MODEL_HUB_DEFAULT_ORG_PUBLIC_QUOTA_BYTES=30_000_000_000
 
       ## ===== Smart Assistant Configuration =====
       - CN_MODEL_HUB_ASSISTANT_LLM_API_KEY=${{CN_MODEL_HUB_ASSISTANT_LLM_API_KEY:-}}
@@ -1390,10 +1390,10 @@ session_expire_hours = 168  # 7 days
 token_expire_days = 365
 
 [quota]
-default_user_private_quota_bytes = 10_000_000      # 10MB
-default_user_public_quota_bytes = 100_000_000      # 100MB
-default_org_private_quota_bytes = 10_000_000       # 10MB
-default_org_public_quota_bytes = 100_000_000       # 100MB
+default_user_private_quota_bytes = 30_000_000_000      # 30GB
+default_user_public_quota_bytes = 30_000_000_000       # 30GB
+default_org_private_quota_bytes = 30_000_000_000       # 30GB
+default_org_public_quota_bytes = 30_000_000_000        # 30GB
 
 [fallback]
 enabled = true
