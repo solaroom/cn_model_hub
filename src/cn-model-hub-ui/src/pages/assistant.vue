@@ -183,28 +183,6 @@
             </div>
           </section>
 
-          <section class="card">
-            <div class="mb-3 flex items-center gap-2 font-semibold">
-              <div class="i-carbon-document text-amber-500" />
-              来源
-            </div>
-            <div v-if="sources.length" class="space-y-2">
-              <a
-                v-for="source in sources"
-                :key="`${source.source}:${source.title}`"
-                :href="source.url || '#'"
-                class="block rounded-lg border border-slate-200 p-3 text-sm transition-colors hover:border-amber-300 hover:bg-amber-50/60 dark:border-slate-700 dark:hover:border-amber-500 dark:hover:bg-amber-950/20"
-              >
-                <div class="font-medium">{{ source.title }}</div>
-                <div class="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">
-                  {{ source.source }}
-                </div>
-              </a>
-            </div>
-            <div v-else class="text-sm text-slate-500 dark:text-slate-400">
-              暂无来源
-            </div>
-          </section>
         </aside>
       </div>
     </section>
@@ -237,7 +215,6 @@ const statusLine = computed(() => {
   return `${llm} · ${status.value.embedding_model}`;
 });
 
-const sources = computed(() => lastResponse.value?.rag?.sources || []);
 const searchResults = computed(() => lastResponse.value?.search?.results || []);
 
 function intentLabel(intent) {

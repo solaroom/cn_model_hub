@@ -192,7 +192,7 @@ SEED_ASSET_CACHE_DIR = ROOT_DIR / "hub-meta" / "cache" / "seed-assets"
 ACCOUNTS: tuple[AccountSeed, ...] = (
     AccountSeed(
         username="mai_lin",
-        email="mai.lin@cn_model_hub.dev",
+        email="mai.lin@cn-model-hub.dev",
         full_name="Mai Lin",
         bio=(
             "Product-minded ML engineer focused on reproducible dataset QA, "
@@ -209,7 +209,7 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="leo_park",
-        email="leo.park@cn_model_hub.dev",
+        email="leo.park@cn-model-hub.dev",
         full_name="Leo Park",
         bio=(
             "Frontend-heavy engineer who keeps repo demos honest with browser "
@@ -225,7 +225,7 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="sara_chen",
-        email="sara.chen@cn_model_hub.dev",
+        email="sara.chen@cn-model-hub.dev",
         full_name="Sara Chen",
         bio=(
             "Annotation lead for invoice, receipt, and layout-heavy datasets. "
@@ -241,7 +241,7 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="noah_kim",
-        email="noah.kim@cn_model_hub.dev",
+        email="noah.kim@cn-model-hub.dev",
         full_name="Noah Kim",
         bio=(
             "Ships compact vision models for harbor monitoring, segmentation, "
@@ -257,7 +257,7 @@ ACCOUNTS: tuple[AccountSeed, ...] = (
     ),
     AccountSeed(
         username="ivy_ops",
-        email="ivy.ops@cn_model_hub.dev",
+        email="ivy.ops@cn-model-hub.dev",
         full_name="Ivy Ops",
         bio=(
             "Release and infra support. Uses stable, boring fixtures so bug "
@@ -426,7 +426,7 @@ def build_scale_accounts() -> tuple[AccountSeed, ...]:
     return tuple(
         AccountSeed(
             username=username,
-            email=f"{username.replace('_', '.')}@cn_model_hub.dev",
+            email=f"{username.replace('_', '.')}@cn-model-hub.dev",
             full_name=full_name,
             bio=bio,
             website=f"https://cn_model_hub.local/{username.replace('_', '-')}",

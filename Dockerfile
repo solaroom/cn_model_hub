@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -14,7 +14,16 @@ COPY ./pyproject.toml .
 COPY ./README.md .
 RUN mkdir -p /app/src/cn_model_hub
 RUN echo "" > /app/src/cn_model_hub/__init__.py
-RUN uv venv --seed "$VIRTUAL_ENV" && uv pip install -e .
+RUN uv venv --seed "$VIRTUAL_ENV" \
+    && uv pip install \
+        --index-url https://download.pytorch.org/whl/cpu \
+        torch \
+    && uv pip install -e ".[assistant]"
+RUN python - <<'PY'
+from modelscope.hub.snapshot_download import snapshot_download
+
+snapshot_download("AI-ModelScope/bge-small-zh-v1.5", cache_dir="/models/modelscope")
+PY
 
 COPY ./src/cn_model_hub ./src/cn_model_hub
 COPY ./scripts ./scripts

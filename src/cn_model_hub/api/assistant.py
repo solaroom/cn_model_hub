@@ -35,6 +35,7 @@ _LATIN_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9._+-]*")
 _READMES = ("README.md", "readme.md", "Readme.md")
 _README_CACHE: dict[tuple[str, str], str] = {}
 _KNOWLEDGE_DIR = Path("docs/platform-knowledge")
+_LOCAL_BGE_SMALL_ZH = Path("/models/modelscope/AI-ModelScope/bge-small-zh-v1.5")
 _SIMPLE_QUESTION_MAX_CHARS = 80
 
 
@@ -317,6 +318,13 @@ def _knowledge_markdown_files() -> list[tuple[str, str]]:
     return []
 
 
+def _embedding_model_path() -> str:
+    model = cfg.assistant.embedding_model
+    if model == "BAAI/bge-small-zh-v1.5" and _LOCAL_BGE_SMALL_ZH.exists():
+        return _LOCAL_BGE_SMALL_ZH.as_posix()
+    return model
+
+
 def _project_roots() -> list[Path]:
     roots = [Path.cwd()]
     try:
@@ -440,7 +448,7 @@ class KnowledgeIndex:
         try:
             from sentence_transformers import SentenceTransformer
 
-            self._embedder = SentenceTransformer(cfg.assistant.embedding_model)
+            self._embedder = SentenceTransformer(_embedding_model_path())
             return self._embedder
         except Exception as exc:
             self._embedding_error = f"{type(exc).__name__}: {exc}"
@@ -490,6 +498,7 @@ class KnowledgeIndex:
                 {
                     "mode": "semantic",
                     "embedding_model": cfg.assistant.embedding_model,
+                    "embedding_model_path": _embedding_model_path(),
                     "chunk_count": len(chunks),
                 },
             )
@@ -801,7 +810,8 @@ async def _call_llm(
             "content": (
                 "你是中文开源AI模型社区的站内智能助手。"
                 "只根据给定的平台资料和搜索结果回答；不确定时要说明。"
-                "回答必须包含可读的中文说明、真实本站链接，并在末尾列出来源。"
+                "回答必须包含可读的中文说明和真实本站链接。"
+                "不要在答案中列出来源、引用列表、文档路径或知识库文件名。"
                 "如果问题很简单，请直接给出简短答案，不要展开推理过程。"
                 "不要输出 <think>、思考过程或内部推理。"
                 "严禁编造或使用 Hugging Face、ModelScope、魔塔社区等外部资源链接；"
@@ -820,7 +830,6 @@ async def _call_llm(
                 f"平台知识片段：\n{source_text or '无'}\n\n"
                 f"搜索结果：\n{result_text or '无'}\n\n"
                 "请整理最终答案。若有搜索结果，用 Markdown 链接列出。"
-                "若引用平台知识，请用“来源：标题（路径）”列出。"
             ),
         }
     )
@@ -894,7 +903,8 @@ async def _stream_llm(
             "content": (
                 "你是中文开源AI模型社区的站内智能助手。"
                 "只根据给定的平台资料和搜索结果回答；不确定时要说明。"
-                "回答必须包含可读的中文说明、真实本站链接，并在末尾列出来源。"
+                "回答必须包含可读的中文说明和真实本站链接。"
+                "不要在答案中列出来源、引用列表、文档路径或知识库文件名。"
                 "如果问题很简单，请直接给出简短答案，不要展开推理过程。"
                 "不要输出 <think>、思考过程或内部推理。"
                 "严禁编造或使用 Hugging Face、ModelScope、魔塔社区等外部资源链接；"
@@ -913,7 +923,6 @@ async def _stream_llm(
                 f"平台知识片段：\n{source_text or '无'}\n\n"
                 f"搜索结果：\n{result_text or '无'}\n\n"
                 "请整理最终答案。若有搜索结果，用 Markdown 链接列出。"
-                "若引用平台知识，请用“来源：标题（路径）”列出。"
             ),
         }
     )
@@ -1093,21 +1102,12 @@ def _fallback_answer(
             excerpt = re.sub(r"\s+", " ", source.get("excerpt", "")).strip()
             if len(excerpt) > 180:
                 excerpt = excerpt[:180].rstrip() + "..."
-            lines.append(f"- {source['title']}：{excerpt}")
+            lines.append(f"- {excerpt}")
 
     if llm_state.get("error"):
         lines.append("")
         lines.append("当前大模型整理未启用或调用失败，以上为平台检索结果的本地整理。")
 
-    if sources:
-        lines.append("")
-        lines.append("来源：")
-        for source in sources[:5]:
-            source_label = source["source"]
-            if source.get("url"):
-                lines.append(f"- [{source['title']}]({source['url']})（{source_label}）")
-            else:
-                lines.append(f"- {source['title']}（{source_label}）")
     return "\n".join(lines)
 
 
