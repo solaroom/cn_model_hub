@@ -5,6 +5,10 @@ ENV PYTHONUNBUFFERED=1
 ENV VIRTUAL_ENV=/opt/cn_model_hub-venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 RUN pip install --no-cache-dir uv
 

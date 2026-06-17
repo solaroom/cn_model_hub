@@ -97,6 +97,10 @@ services:
       # - CN_MODEL_HUB_CACHE_NAMESPACE=kh # Override if multiple deployments share Valkey
     volumes:
       - ./hub-meta/hub-api:/hub-api-creds
+      # Required only when CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_UPLOAD_METHOD=ssh.
+      # Mount a deployment-specific SSH config/key directory; startup copies it
+      # into /root/.ssh with OpenSSH-safe permissions. Never commit keys.
+      # - ~/.ssh:/host-ssh:ro
 
   minio:
     image: quay.io/minio/minio:latest

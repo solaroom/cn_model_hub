@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import shutil
 import sys
 import time
 import httpx
@@ -10,6 +11,8 @@ from pathlib import Path
 CRED_FILE = Path("/hub-api-creds/credentials.env")
 LAKEFS_ENDPOINT = os.getenv("CN_MODEL_HUB_LAKEFS_ENDPOINT", "http://lakefs:28000")
 ADMIN_USER = os.getenv("LAKEFS_ADMIN_USER", "admin")
+HOST_SSH_DIR = Path(os.getenv("CN_MODEL_HUB_HOST_SSH_DIR", "/host-ssh"))
+CONTAINER_SSH_DIR = Path("/root/.ssh")
 
 
 def wait_for_lakefs():
@@ -121,6 +124,33 @@ def init_garage():
     print("[startup] ")
 
 
+def prepare_ssh_config():
+    """Copy host-mounted SSH files into the container with OpenSSH-safe permissions."""
+    if not HOST_SSH_DIR.exists():
+        return
+
+    CONTAINER_SSH_DIR.mkdir(parents=True, exist_ok=True)
+    CONTAINER_SSH_DIR.chmod(0o700)
+
+    copied = 0
+    for source in HOST_SSH_DIR.rglob("*"):
+        if source.is_dir():
+            continue
+        relative = source.relative_to(HOST_SSH_DIR)
+        target = CONTAINER_SSH_DIR / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.parent.chmod(0o700)
+        try:
+            shutil.copy2(source, target)
+            target.chmod(0o600)
+            copied += 1
+        except OSError as exc:
+            print(f"[startup] Failed to copy SSH file {relative}: {exc}", file=sys.stderr)
+
+    if copied:
+        print(f"[startup] Prepared SSH config from {HOST_SSH_DIR}")
+
+
 def run_migrations():
     """Run database migrations before starting server."""
     migrations_script = Path(__file__).parent / "scripts" / "run_migrations.py"
@@ -152,6 +182,7 @@ def run_migrations():
 
 def main():
     wait_for_lakefs()
+    prepare_ssh_config()
 
     if CRED_FILE.exists() or (
         "CN_MODEL_HUB_LAKEFS_ACCESS_KEY" in os.environ
