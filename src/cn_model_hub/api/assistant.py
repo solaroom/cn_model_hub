@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 import re
 import unicodedata
@@ -13,6 +14,7 @@ from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from cn_model_hub.api import search as public_search
@@ -33,6 +35,7 @@ _LATIN_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9._+-]*")
 _READMES = ("README.md", "readme.md", "Readme.md")
 _README_CACHE: dict[tuple[str, str], str] = {}
 _KNOWLEDGE_DIR = Path("docs/platform-knowledge")
+_SIMPLE_QUESTION_MAX_CHARS = 80
 
 
 @dataclass(frozen=True)
@@ -141,6 +144,32 @@ def _detect_intent(question: str) -> Intent:
     if asks_search or (asks_resource and any(word in text for word in ("按", "筛", "找"))):
         return "repository_search"
     return "platform_qa"
+
+
+def _is_simple_question(question: str, intent: Intent) -> bool:
+    text = _normalize(question)
+    if len(text) > _SIMPLE_QUESTION_MAX_CHARS:
+        return False
+    heavy_words = (
+        "对比",
+        "详细",
+        "分析",
+        "步骤",
+        "方案",
+        "架构",
+        "评测",
+        "排行榜",
+        "推荐",
+        "搜索",
+        "找",
+        "筛选",
+        "参数",
+        "mlflow",
+        "lakefs",
+    )
+    if intent in ("repository_search", "combined"):
+        return False
+    return not any(word in text for word in heavy_words)
 
 
 def _requested_repo_types(question: str) -> list[str]:
@@ -748,6 +777,7 @@ async def _call_llm(
     rag_sources: list[dict[str, Any]],
     search_results: list[dict[str, Any]],
     history: list[AssistantMessage],
+    simple: bool = False,
 ) -> tuple[str | None, dict[str, Any]]:
     api_key = cfg.assistant.llm_api_key
     if not api_key:
@@ -772,6 +802,8 @@ async def _call_llm(
                 "你是中文开源AI模型社区的站内智能助手。"
                 "只根据给定的平台资料和搜索结果回答；不确定时要说明。"
                 "回答必须包含可读的中文说明、真实本站链接，并在末尾列出来源。"
+                "如果问题很简单，请直接给出简短答案，不要展开推理过程。"
+                "不要输出 <think>、思考过程或内部推理。"
                 "严禁编造或使用 Hugging Face、ModelScope、魔塔社区等外部资源链接；"
                 "模型、数据集、Demo 的链接只能使用搜索结果中给出的站内链接。"
             ),
@@ -798,6 +830,7 @@ async def _call_llm(
         "model": cfg.assistant.llm_model,
         "messages": messages,
         "temperature": 0.2,
+        "max_tokens": 512 if simple else 1400,
         "stream": False,
     }
     try:
@@ -828,6 +861,176 @@ async def _call_llm(
             "model": cfg.assistant.llm_model,
             "error": f"{type(exc).__name__}: {exc}",
         }
+
+
+async def _stream_llm(
+    question: str,
+    intent: Intent,
+    rag_sources: list[dict[str, Any]],
+    search_results: list[dict[str, Any]],
+    history: list[AssistantMessage],
+    simple: bool = False,
+):
+    api_key = cfg.assistant.llm_api_key
+    if not api_key:
+        yield None, {
+            "provider": "fallback",
+            "model": cfg.assistant.llm_model,
+            "error": "助手 LLM API Key 未配置",
+        }
+        return
+
+    source_text = "\n\n".join(
+        f"[{index + 1}] {source['title']} ({source['source']})\n{source['excerpt']}"
+        for index, source in enumerate(rag_sources)
+    )
+    result_text = "\n".join(
+        f"- {item['title']} | {item['type_label']} | 站内链接 {item['url']} | 作者 {item['author']}"
+        for item in search_results
+    )
+    messages: list[dict[str, str]] = [
+        {
+            "role": "system",
+            "content": (
+                "你是中文开源AI模型社区的站内智能助手。"
+                "只根据给定的平台资料和搜索结果回答；不确定时要说明。"
+                "回答必须包含可读的中文说明、真实本站链接，并在末尾列出来源。"
+                "如果问题很简单，请直接给出简短答案，不要展开推理过程。"
+                "不要输出 <think>、思考过程或内部推理。"
+                "严禁编造或使用 Hugging Face、ModelScope、魔塔社区等外部资源链接；"
+                "模型、数据集、Demo 的链接只能使用搜索结果中给出的站内链接。"
+            ),
+        }
+    ]
+    for item in history[-6:]:
+        messages.append({"role": item.role, "content": item.content[:1200]})
+    messages.append(
+        {
+            "role": "user",
+            "content": (
+                f"用户问题：{question}\n"
+                f"Agent 判断意图：{intent}\n\n"
+                f"平台知识片段：\n{source_text or '无'}\n\n"
+                f"搜索结果：\n{result_text or '无'}\n\n"
+                "请整理最终答案。若有搜索结果，用 Markdown 链接列出。"
+                "若引用平台知识，请用“来源：标题（路径）”列出。"
+            ),
+        }
+    )
+    base_url = cfg.assistant.llm_base_url
+    url = f"{base_url.rstrip('/')}/chat/completions"
+    payload = {
+        "model": cfg.assistant.llm_model,
+        "messages": messages,
+        "temperature": 0.2,
+        "max_tokens": 512 if simple else 1400,
+        "stream": True,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=cfg.assistant.llm_timeout_seconds) as client:
+            async with client.stream(
+                "POST",
+                url,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("data:"):
+                        line = line.removeprefix("data:").strip()
+                    if line == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    choice = (data.get("choices") or [{}])[0]
+                    delta = choice.get("delta") or {}
+                    content = delta.get("content") or ""
+                    if content:
+                        yield content, None
+        yield None, {
+            "provider": cfg.assistant.llm_provider,
+            "model": cfg.assistant.llm_model,
+            "base_url": base_url,
+        }
+    except Exception as exc:
+        logger.warning(
+            f"Assistant streaming LLM call failed: "
+            f"{type(exc).__name__}: {exc}"
+        )
+        yield None, {
+            "provider": "fallback",
+            "model": cfg.assistant.llm_model,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def _ndjson_event(event: str, data: dict[str, Any]) -> str:
+    return json.dumps({"event": event, "data": data}, ensure_ascii=False) + "\n"
+
+
+class _ThinkingStreamFilter:
+    def __init__(self) -> None:
+        self._buffer = ""
+        self._in_think = False
+
+    def feed(self, text: str) -> str:
+        self._buffer += text
+        output: list[str] = []
+        while self._buffer:
+            lower = self._buffer.lower()
+            if self._in_think:
+                end = lower.find("</think>")
+                if end == -1:
+                    self._buffer = self._buffer[-8:]
+                    break
+                self._buffer = self._buffer[end + len("</think>") :]
+                self._in_think = False
+                continue
+
+            start = lower.find("<think>")
+            if start == -1:
+                keep = 0
+                tag = "<think>"
+                max_keep = min(len(tag) - 1, len(self._buffer))
+                for size in range(max_keep, 0, -1):
+                    if tag.startswith(self._buffer[-size:].lower()):
+                        keep = size
+                        break
+                if keep:
+                    output.append(self._buffer[:-keep])
+                    self._buffer = self._buffer[-keep:]
+                else:
+                    output.append(self._buffer)
+                    self._buffer = ""
+                break
+
+            output.append(self._buffer[:start])
+            self._buffer = self._buffer[start + len("<think>") :]
+            self._in_think = True
+
+        return "".join(output)
+
+    def flush(self) -> str:
+        if self._in_think:
+            self._buffer = ""
+            return ""
+        output = self._buffer
+        self._buffer = ""
+        return output
+
+
+def _strip_thinking(text: str) -> str:
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"</?think>", "", text, flags=re.IGNORECASE)
+    return text.strip()
 
 
 def _enforce_platform_links(answer: str, search_results: list[dict[str, Any]]) -> str:
@@ -929,13 +1132,14 @@ async def assistant_chat(
 ):
     question = payload.question.strip()
     intent = _detect_intent(question)
+    simple = _is_simple_question(question, intent)
     filters = _extract_filters(question)
 
     sources: list[dict[str, Any]] = []
     rag_meta: dict[str, Any] = {}
     if intent in ("platform_qa", "combined"):
         sources, rag_meta = await _knowledge_index.search(
-            question, min(cfg.assistant.max_knowledge_chunks, 8)
+            question, min(cfg.assistant.max_knowledge_chunks, 2 if simple else 8)
         )
     else:
         rag_meta = {
@@ -962,10 +1166,12 @@ async def assistant_chat(
         sources,
         search_data.get("results") or [],
         payload.history,
+        simple,
     )
     answer = llm_answer or _fallback_answer(
         question, intent, sources, search_data, llm_state
     )
+    answer = _strip_thinking(answer)
     answer = _enforce_platform_links(answer, search_data.get("results") or [])
 
     return AssistantChatResponse(
@@ -975,4 +1181,122 @@ async def assistant_chat(
         rag={**rag_meta, "sources": sources},
         search=search_data,
         llm=llm_state,
+    )
+
+
+@router.post("/assistant/chat/stream")
+async def assistant_chat_stream(
+    payload: AssistantChatRequest,
+    user: User | None = Depends(get_optional_user),
+):
+    async def events():
+        question = payload.question.strip()
+        intent = _detect_intent(question)
+        simple = _is_simple_question(question, intent)
+        filters = _extract_filters(question)
+
+        sources: list[dict[str, Any]] = []
+        rag_meta: dict[str, Any] = {}
+        if intent in ("platform_qa", "combined"):
+            sources, rag_meta = await _knowledge_index.search(
+                question, min(cfg.assistant.max_knowledge_chunks, 2 if simple else 8)
+            )
+        else:
+            rag_meta = {
+                "mode": "skipped",
+                "embedding_model": cfg.assistant.embedding_model,
+                "chunk_count": len(_knowledge_index.chunks()),
+            }
+
+        search_data: dict[str, Any] = {
+            "queries": [],
+            "filters": filters,
+            "backend": None,
+            "relaxed": False,
+            "results": [],
+        }
+        if intent in ("repository_search", "combined"):
+            search_data = await _run_repository_search(
+                question, filters, user, payload.limit
+            )
+
+        yield _ndjson_event(
+            "meta",
+            {
+                "question": question,
+                "intent": intent,
+                "rag": {**rag_meta, "sources": sources},
+                "search": search_data,
+                "llm": {
+                    "provider": cfg.assistant.llm_provider,
+                    "model": cfg.assistant.llm_model,
+                },
+            },
+        )
+
+        chunks: list[str] = []
+        llm_state: dict[str, Any] | None = None
+        thinking_filter = _ThinkingStreamFilter()
+        async for chunk, state in _stream_llm(
+            question,
+            intent,
+            sources,
+            search_data.get("results") or [],
+            payload.history,
+            simple,
+        ):
+            if state is not None:
+                llm_state = state
+                continue
+            if not chunk:
+                continue
+            visible_chunk = thinking_filter.feed(chunk)
+            if not visible_chunk:
+                continue
+            chunks.append(visible_chunk)
+            yield _ndjson_event("delta", {"text": visible_chunk})
+
+        tail = thinking_filter.flush()
+        if tail:
+            chunks.append(tail)
+            yield _ndjson_event("delta", {"text": tail})
+
+        answer = _strip_thinking("".join(chunks))
+        if not answer:
+            llm_state = llm_state or {
+                "provider": "fallback",
+                "model": cfg.assistant.llm_model,
+            }
+            answer = _fallback_answer(
+                question, intent, sources, search_data, llm_state
+            )
+        answer = _enforce_platform_links(answer, search_data.get("results") or [])
+        streamed_answer = _strip_thinking("".join(chunks))
+        suffix = (
+            answer[len(streamed_answer) :]
+            if answer.startswith(streamed_answer)
+            else answer
+        )
+        if suffix:
+            yield _ndjson_event("delta", {"text": suffix})
+        yield _ndjson_event(
+            "done",
+            {
+                "question": question,
+                "intent": intent,
+                "answer": answer,
+                "rag": {**rag_meta, "sources": sources},
+                "search": search_data,
+                "llm": llm_state
+                or {
+                    "provider": cfg.assistant.llm_provider,
+                    "model": cfg.assistant.llm_model,
+                },
+            },
+        )
+
+    return StreamingResponse(
+        events(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

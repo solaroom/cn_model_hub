@@ -81,7 +81,7 @@
                   <el-icon class="is-loading">
                     <div class="i-carbon-loading" />
                   </el-icon>
-                  正在检索
+                  正在生成
                 </div>
               </div>
             </div>
@@ -303,15 +303,33 @@ async function send() {
   await scrollToBottom();
 
   try {
-    const { data } = await assistantAPI.chat({
+    const requestPayload = {
       question: text,
       history: historyForApi(),
       limit: 6,
+    };
+    const data = await assistantAPI.chatStream(requestPayload, {
+      onMeta: (meta) => {
+        assistantMessage.intent = meta.intent;
+        lastResponse.value = meta;
+      },
+      onDelta: async (chunk) => {
+        assistantMessage.content += chunk;
+        assistantMessage.loading = false;
+        await scrollToBottom();
+      },
+      onDone: (result) => {
+        assistantMessage.content = result.answer;
+        assistantMessage.intent = result.intent;
+        lastResponse.value = result;
+      },
     });
-    assistantMessage.content = data.answer;
-    assistantMessage.intent = data.intent;
+    if (data) {
+      assistantMessage.content = data.answer;
+      assistantMessage.intent = data.intent;
+      lastResponse.value = data;
+    }
     assistantMessage.loading = false;
-    lastResponse.value = data;
   } catch (err) {
     console.error("Assistant request failed:", err);
     assistantMessage.content =

@@ -71,6 +71,16 @@ function encodeSegment(value) {
   return encodeURIComponent(String(value ?? ""));
 }
 
+function authHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  const token = localStorage.getItem("hf_token");
+  const externalTokens = getExternalTokens();
+  if (token || externalTokens.length > 0) {
+    headers.Authorization = formatAuthHeader(token, externalTokens);
+  }
+  return headers;
+}
+
 function repoApiPath(type, namespace, name) {
   return `/api/${type}s/${encodeSegment(namespace)}/${encodeSegment(name)}`;
 }
@@ -794,7 +804,60 @@ export const searchAPI = {
  */
 export const assistantAPI = {
   status: () => api.get("/api/assistant/status"),
-  chat: (data) => api.post("/api/assistant/chat", data, { timeout: 90000 }),
+  chatStream: async (data, handlers = {}) => {
+    const response = await fetch("/api/assistant/chat/stream", {
+      method: "POST",
+      credentials: "include",
+      headers: authHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/x-ndjson",
+      }),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok || !response.body) {
+      throw new Error(`Assistant stream failed: HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalData = null;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const message = JSON.parse(line);
+        handlers.onEvent?.(message);
+        if (message.event === "meta") {
+          handlers.onMeta?.(message.data);
+        } else if (message.event === "delta") {
+          handlers.onDelta?.(message.data.text || "");
+        } else if (message.event === "done") {
+          finalData = message.data;
+          handlers.onDone?.(message.data);
+        } else if (message.event === "error") {
+          handlers.onError?.(message.data);
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      const message = JSON.parse(buffer);
+      handlers.onEvent?.(message);
+      if (message.event === "done") {
+        finalData = message.data;
+        handlers.onDone?.(message.data);
+      }
+    }
+
+    return finalData;
+  },
 };
 
 /**
