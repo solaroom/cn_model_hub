@@ -29,6 +29,7 @@ from cn_model_hub.utils.s3 import get_object_metadata, object_exists
 from cn_model_hub.api.quota.util import update_namespace_storage, update_repository_storage
 from cn_model_hub.api.repo.utils.gc import run_gc_for_file, track_lfs_object
 from cn_model_hub.api.repo.utils.hf import HFErrorCode
+from cn_model_hub.api.space_runtime import stop_runtime_for_repo
 
 logger = get_logger("FILE")
 router = APIRouter()
@@ -984,6 +985,16 @@ async def commit(
     except Exception as e:
         # Log error but don't fail the commit
         logger.warning(f"Failed to update storage usage for {namespace}: {e}")
+
+    try:
+        await stop_runtime_for_repo(
+            repo_type.value,
+            namespace,
+            name,
+            reason="repository updated",
+        )
+    except Exception as e:
+        logger.warning(f"Failed to stop runtime after repository update: {e}")
 
     return {
         "commitUrl": commit_url,

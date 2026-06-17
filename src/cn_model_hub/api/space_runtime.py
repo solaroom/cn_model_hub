@@ -9,6 +9,9 @@ for the web UI.
 import asyncio
 import hashlib
 import os
+import re
+import tarfile
+import tempfile
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -221,10 +224,16 @@ class RuntimeState:
 
 _runtimes: dict[str, RuntimeState] = {}
 _locks: dict[str, asyncio.Lock] = {}
+_remote_statuses: dict[str, dict] = {}
 
 
 def _runtime_key(repo_type: str, namespace: str, name: str) -> str:
     return f"{repo_type}:{namespace}/{name}"
+
+
+def _remote_runtime_key(repo_type: str, namespace: str, name: str) -> str:
+    raw = f"{repo_type}-{namespace}-{name}"
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", raw).strip("-")[:160]
 
 
 def _normalize_repo_type(repo_type: str) -> str:
@@ -241,6 +250,27 @@ def _runtime_root() -> Path:
     root = Path(cfg.app.space_runtime_dir).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     return root
+
+
+def _remote_enabled() -> bool:
+    return cfg.app.space_runtime_backend.lower() == "remote"
+
+
+def _remote_headers() -> dict[str, str]:
+    headers = {}
+    if cfg.app.space_runtime_remote_api_key:
+        headers["Authorization"] = f"Bearer {cfg.app.space_runtime_remote_api_key}"
+    return headers
+
+
+def _remote_agent_url(path: str) -> str:
+    base_url = cfg.app.space_runtime_remote_base_url.rstrip("/")
+    if not base_url:
+        raise HTTPException(
+            500,
+            detail={"error": "Remote runtime backend is enabled but base URL is empty."},
+        )
+    return f"{base_url}{path}"
 
 
 def _safe_child_path(root: Path, path: str) -> Path | None:
@@ -342,6 +372,35 @@ def _public_status(state: RuntimeState | None) -> dict:
     }
 
 
+def _public_remote_status(repo: Repository, data: dict | None) -> dict:
+    if not data:
+        return {
+            "status": "stopped",
+            "message": "Demo 尚未启动。",
+            "proxy_url": "",
+            "logs": [],
+        }
+    status = data.get("status") or "stopped"
+    return {
+        "status": status,
+        "message": data.get("message") or "",
+        "revision": data.get("revision") or "main",
+        "commit_id": data.get("commit_id") or "",
+        "proxy_url": (
+            f"/api/{quote(repo.repo_type + 's', safe='')}/"
+            f"{quote(repo.namespace, safe='')}/"
+            f"{quote(repo.name, safe='')}/runtime/proxy/"
+            if status in {"running", "starting"}
+            else ""
+        ),
+        "logs": data.get("logs") or [],
+        "log_limit": data.get("log_limit") or RUNTIME_LOG_LINES,
+        "active_runtime_key": data.get("active_runtime_key"),
+        "gpu": data.get("gpu"),
+        "cuda_available": data.get("cuda_available"),
+    }
+
+
 def _demo_label(repo_type: str) -> str:
     return "模型 Demo" if repo_type == "model" else "Space Demo"
 
@@ -373,7 +432,12 @@ def _repo_last_modified(repo: Repository) -> str | None:
 
 
 def _serialize_demo(repo: Repository, state: RuntimeState | None) -> dict:
-    status = _public_status(state)
+    if _remote_enabled():
+        status = _public_remote_status(
+            repo, _remote_statuses.get(_runtime_key(repo.repo_type, repo.namespace, repo.name))
+        )
+    else:
+        status = _public_status(state)
     return {
         "id": _runtime_key(repo.repo_type, repo.namespace, repo.name),
         "repo_type": repo.repo_type,
@@ -447,6 +511,181 @@ async def _materialize_repo(repo: Repository, revision: str) -> tuple[Path, str]
         shutil.rmtree(workdir)
     tmpdir.rename(workdir)
     return workdir, commit_id
+
+
+def _create_runtime_tar(workdir: Path) -> Path:
+    package_dir = _runtime_root() / "_packages"
+    package_dir.mkdir(parents=True, exist_ok=True)
+    fd, package_name = tempfile.mkstemp(
+        prefix=f"{workdir.name}-", suffix=".tar.gz", dir=str(package_dir)
+    )
+    os.close(fd)
+    package_path = Path(package_name)
+    with tarfile.open(package_path, "w:gz") as archive:
+        for child in workdir.iterdir():
+            if child.name == ".cn_model_hub_runtime_venv":
+                continue
+            archive.add(child, arcname=child.name)
+    return package_path
+
+
+async def _run_upload_command(command: list[str]) -> None:
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    output = await proc.communicate()
+    if proc.returncode != 0:
+        text = (output[0] or b"").decode(errors="replace")
+        raise RuntimeError(f"{command[0]} failed with code {proc.returncode}: {text}")
+
+
+async def _stream_file_to_remote(command: list[str], package_path: Path) -> None:
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    assert proc.stdin is not None
+    with package_path.open("rb") as fh:
+        while True:
+            chunk = fh.read(1024 * 1024)
+            if not chunk:
+                break
+            proc.stdin.write(chunk)
+            await proc.stdin.drain()
+    proc.stdin.close()
+    output = await proc.communicate()
+    if proc.returncode != 0:
+        text = (output[0] or b"").decode(errors="replace")
+        raise RuntimeError(f"{command[0]} upload failed with code {proc.returncode}: {text}")
+
+
+async def _upload_runtime_package(remote_key: str, package_path: Path) -> None:
+    if cfg.app.space_runtime_remote_upload_method.lower() != "ssh":
+        raise RuntimeError("Only ssh remote runtime upload is supported.")
+    ssh_alias = cfg.app.space_runtime_remote_ssh_alias
+    remote_dir = f"{cfg.app.space_runtime_remote_root.rstrip('/')}/{remote_key}/incoming"
+    await _run_upload_command(["ssh", ssh_alias, f"mkdir -p {remote_dir}"])
+    await _stream_file_to_remote(
+        ["ssh", ssh_alias, f"cat > {remote_dir}/source.tar.gz"],
+        package_path,
+    )
+
+
+async def _remote_agent_get_status(remote_key: str) -> dict:
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.get(
+            _remote_agent_url(f"/api/runtime/status/{quote(remote_key, safe='')}"),
+            headers=_remote_headers(),
+        )
+    if response.status_code == 404:
+        return {"status": "stopped", "runtime_key": remote_key}
+    if response.status_code >= 400:
+        raise RuntimeError(response.text)
+    return response.json()
+
+
+async def _remote_agent_stop(remote_key: str, reason: str) -> dict:
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.post(
+            _remote_agent_url("/api/runtime/stop"),
+            headers=_remote_headers(),
+            json={"runtime_key": remote_key, "reason": reason},
+        )
+    if response.status_code >= 400:
+        raise RuntimeError(response.text)
+    return response.json()
+
+
+async def _remote_agent_start(
+    repo: Repository,
+    remote_key: str,
+    revision: str,
+    commit_id: str,
+    install_requirements: bool,
+    using_builtin_model_app: bool,
+) -> dict:
+    payload = {
+        "runtime_key": remote_key,
+        "repo_type": repo.repo_type,
+        "repo_id": f"{repo.namespace}/{repo.name}",
+        "revision": revision,
+        "commit_id": commit_id,
+        "remote_root": cfg.app.space_runtime_remote_root,
+        "app_entry": "app.py",
+        "using_builtin_model_app": using_builtin_model_app,
+        "install_requirements": install_requirements,
+        "env": {
+            "CN_MODEL_HUB_REPO_TYPE": repo.repo_type,
+            "CN_MODEL_HUB_REPO_ID": f"{repo.namespace}/{repo.name}",
+            "CN_MODEL_HUB_SPACE_ID": f"{repo.namespace}/{repo.name}",
+            "CN_MODEL_HUB_SPACE_REVISION": revision,
+            "CN_MODEL_HUB_SPACE_COMMIT": commit_id,
+            "CN_MODEL_HUB_REPO_REVISION": revision,
+            "CN_MODEL_HUB_REPO_COMMIT": commit_id,
+            "MAX_NEW_TOKENS": "256",
+            "MLFLOW_TRACKING_URI": cfg.app.mlflow_tracking_uri,
+            "MLFLOW_EXPERIMENT_NAME": repo.mlflow_experiment_name or "",
+            "MLFLOW_EXPERIMENT_ID": repo.mlflow_experiment_id or "",
+        },
+    }
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            _remote_agent_url("/api/runtime/start"),
+            headers=_remote_headers(),
+            json=payload,
+        )
+    if response.status_code >= 400:
+        raise RuntimeError(response.text)
+    return response.json()
+
+
+async def _start_remote_runtime(
+    repo: Repository,
+    revision: str,
+    install_requirements: bool,
+) -> dict:
+    key = _runtime_key(repo.repo_type, repo.namespace, repo.name)
+    remote_key = _remote_runtime_key(repo.repo_type, repo.namespace, repo.name)
+    lock = _locks.setdefault(key, asyncio.Lock())
+    async with lock:
+        workdir, commit_id = await _materialize_repo(repo, revision)
+        using_builtin_model_app = repo.repo_type == "model" and not (workdir / "app.py").exists()
+        remote_status = await _remote_agent_get_status(remote_key)
+        if (
+            remote_status.get("status") == "running"
+            and remote_status.get("commit_id") == commit_id
+        ):
+            _remote_statuses[key] = remote_status
+            return remote_status
+
+        if remote_status.get("commit_id") != commit_id:
+            try:
+                await _remote_agent_stop(remote_key, "repository updated")
+            except Exception as exc:
+                logger.warning(f"Failed to stop stale remote runtime {remote_key}: {exc}")
+            package_path = _create_runtime_tar(workdir)
+            try:
+                await _upload_runtime_package(remote_key, package_path)
+            finally:
+                try:
+                    package_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
+
+        started = await _remote_agent_start(
+            repo,
+            remote_key,
+            revision,
+            commit_id,
+            install_requirements,
+            using_builtin_model_app,
+        )
+        _remote_statuses[key] = started
+        return started
 
 
 async def _read_process_output(state: RuntimeState) -> None:
@@ -669,6 +908,31 @@ async def _start_runtime(
             raise
 
 
+async def stop_runtime_for_repo(
+    repo_type: str,
+    namespace: str,
+    name: str,
+    reason: str = "repository updated",
+) -> None:
+    key = _runtime_key(repo_type, namespace, name)
+    if _remote_enabled():
+        remote_key = _remote_runtime_key(repo_type, namespace, name)
+        try:
+            data = await _remote_agent_stop(remote_key, reason)
+            _remote_statuses[key] = data
+        except Exception as exc:
+            logger.warning(
+                f"Repository updated, but failed to stop remote runtime {remote_key}: {exc}"
+            )
+        return
+
+    state = _runtimes.get(key)
+    if state and state.process and state.process.returncode is None:
+        state.process.terminate()
+        state.status = "stopped"
+        state.message = f"Runtime stopped: {reason}."
+
+
 @router.get("/{repo_type}s/{namespace}/{name}/runtime")
 async def get_runtime_status(
     repo_type: str,
@@ -679,6 +943,16 @@ async def get_runtime_status(
     repo_type = _normalize_repo_type(repo_type)
     repo = _repo_or_404(repo_type, namespace, name)
     check_repo_read_permission(repo, user)
+    if _remote_enabled():
+        key = _runtime_key(repo_type, namespace, name)
+        remote_key = _remote_runtime_key(repo_type, namespace, name)
+        try:
+            data = await _remote_agent_get_status(remote_key)
+            _remote_statuses[key] = data
+        except Exception as exc:
+            logger.warning(f"Failed to fetch remote runtime status {remote_key}: {exc}")
+            data = _remote_statuses.get(key)
+        return _public_remote_status(repo, data)
     return _public_status(_runtimes.get(_runtime_key(repo_type, namespace, name)))
 
 
@@ -729,6 +1003,9 @@ async def start_runtime(
         else body.install_requirements
     )
     try:
+        if _remote_enabled():
+            data = await _start_remote_runtime(repo, body.revision, install)
+            return _public_remote_status(repo, data)
         state = await _start_runtime(repo, body.revision, install)
         return _public_status(state)
     except HTTPException:
@@ -751,6 +1028,11 @@ async def stop_runtime(
     repo_type = _normalize_repo_type(repo_type)
     repo = _repo_or_404(repo_type, namespace, name)
     check_repo_write_permission(repo, user)
+    if _remote_enabled():
+        remote_key = _remote_runtime_key(repo_type, namespace, name)
+        data = await _remote_agent_stop(remote_key, "manual stop")
+        _remote_statuses[_runtime_key(repo_type, namespace, name)] = data
+        return _public_remote_status(repo, data)
     state = _runtimes.get(_runtime_key(repo_type, namespace, name))
     if state and state.process and state.process.returncode is None:
         state.process.terminate()
@@ -778,6 +1060,44 @@ async def proxy_runtime(
     repo_type = _normalize_repo_type(repo_type)
     repo = _repo_or_404(repo_type, namespace, name)
     check_repo_read_permission(repo, user)
+    if _remote_enabled():
+        remote_key = _remote_runtime_key(repo_type, namespace, name)
+        target_url = _remote_agent_url(
+            f"/api/runtime/proxy/{quote(remote_key, safe='')}/{path}"
+        )
+        if request.url.query:
+            target_url = f"{target_url}?{request.url.query}"
+        headers = {
+            key: value
+            for key, value in request.headers.items()
+            if key.lower() not in HOP_BY_HOP_HEADERS
+            and key.lower() not in {"host", "accept-encoding", "authorization"}
+        }
+        headers.update(_remote_headers())
+        headers["accept-encoding"] = "identity"
+        async with httpx.AsyncClient(follow_redirects=False, timeout=None) as client:
+            upstream = await client.request(
+                request.method,
+                target_url,
+                content=await request.body(),
+                headers=headers,
+            )
+        response_headers = {
+            key: value
+            for key, value in upstream.headers.items()
+            if key.lower() not in HOP_BY_HOP_HEADERS
+        }
+        location = response_headers.get("location") or response_headers.get("Location")
+        if location and location.startswith("/"):
+            response_headers["location"] = (
+                f"/api/{repo_type}s/{namespace}/{name}/runtime/proxy{location}"
+            )
+        return Response(
+            content=upstream.content,
+            status_code=upstream.status_code,
+            headers=response_headers,
+            media_type=upstream.headers.get("content-type"),
+        )
     state = _runtimes.get(_runtime_key(repo_type, namespace, name))
     if not state or state.status not in {"running", "starting"}:
         raise HTTPException(404, detail={"error": "Runtime is not running"})

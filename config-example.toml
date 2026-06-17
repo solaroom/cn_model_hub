@@ -70,8 +70,14 @@ download_keep_sessions_days = 30  # Keep sessions from last N days
 debug_log_payloads = false  # Log commit payloads (development only)
 # Site identification
 site_name = "中文开源AI模型社区"
+space_runtime_backend = "local"  # local | remote
 space_runtime_dir = ".space-runtimes"
 space_runtime_install_requirements = true
+space_runtime_remote_base_url = "https://uu866823-86b2-6cbcbbb3.westb.seetacloud.com:8443"
+space_runtime_remote_api_key = ""  # Set via env only; do not commit secrets.
+space_runtime_remote_upload_method = "ssh"
+space_runtime_remote_ssh_alias = "seeta"
+space_runtime_remote_root = "/root/autodl-tmp/cn-model-hub-runtimes"
 mlflow_tracking_uri = "http://127.0.0.1:25000"
 # Log Settings
 log_level = "INFO"  # Low level logs will be filted (avaiable options: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL" )

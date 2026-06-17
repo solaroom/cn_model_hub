@@ -203,8 +203,14 @@ class AppConfig(BaseModel):
     # Site identification
     site_name: str = "cn_model_hub"  # Configurable site name (e.g., "MyCompany Hub")
     # Simplified local Space runtime.
+    space_runtime_backend: str = "local"
     space_runtime_dir: str = ".space-runtimes"
     space_runtime_install_requirements: bool = True
+    space_runtime_remote_base_url: str = ""
+    space_runtime_remote_api_key: str = ""
+    space_runtime_remote_upload_method: str = "ssh"
+    space_runtime_remote_ssh_alias: str = "seeta"
+    space_runtime_remote_root: str = "/root/autodl-tmp/cn-model-hub-runtimes"
     # MLflow tracking endpoint. Also exported to Space runtimes as MLFLOW_TRACKING_URI.
     mlflow_tracking_uri: str = ""
     # Log settings
@@ -577,11 +583,35 @@ def load_config(path: str = None) -> Config:
         app_env["site_name"] = os.environ["CN_MODEL_HUB_SITE_NAME"]
     if "CN_MODEL_HUB_SPACE_RUNTIME_DIR" in os.environ:
         app_env["space_runtime_dir"] = os.environ["CN_MODEL_HUB_SPACE_RUNTIME_DIR"]
+    if "CN_MODEL_HUB_SPACE_RUNTIME_BACKEND" in os.environ:
+        app_env["space_runtime_backend"] = os.environ[
+            "CN_MODEL_HUB_SPACE_RUNTIME_BACKEND"
+        ]
     if "CN_MODEL_HUB_SPACE_RUNTIME_INSTALL_REQUIREMENTS" in os.environ:
         app_env["space_runtime_install_requirements"] = (
             os.environ["CN_MODEL_HUB_SPACE_RUNTIME_INSTALL_REQUIREMENTS"].lower()
             == "true"
         )
+    if "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_BASE_URL" in os.environ:
+        app_env["space_runtime_remote_base_url"] = os.environ[
+            "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_BASE_URL"
+        ]
+    if "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_API_KEY" in os.environ:
+        app_env["space_runtime_remote_api_key"] = os.environ[
+            "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_API_KEY"
+        ]
+    if "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_UPLOAD_METHOD" in os.environ:
+        app_env["space_runtime_remote_upload_method"] = os.environ[
+            "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_UPLOAD_METHOD"
+        ]
+    if "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_SSH_ALIAS" in os.environ:
+        app_env["space_runtime_remote_ssh_alias"] = os.environ[
+            "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_SSH_ALIAS"
+        ]
+    if "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_ROOT" in os.environ:
+        app_env["space_runtime_remote_root"] = os.environ[
+            "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_ROOT"
+        ]
     if "CN_MODEL_HUB_MLFLOW_TRACKING_URI" in os.environ:
         app_env["mlflow_tracking_uri"] = os.environ[
             "CN_MODEL_HUB_MLFLOW_TRACKING_URI"

@@ -108,6 +108,18 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     monkeypatch.setenv("CN_MODEL_HUB_LFS_KEEP_VERSIONS", "6")
     monkeypatch.setenv("CN_MODEL_HUB_LFS_AUTO_GC", "true")
     monkeypatch.setenv("CN_MODEL_HUB_SITE_NAME", "Env Hub")
+    monkeypatch.setenv("CN_MODEL_HUB_SPACE_RUNTIME_BACKEND", "remote")
+    monkeypatch.setenv("CN_MODEL_HUB_SPACE_RUNTIME_DIR", ".remote-runtimes")
+    monkeypatch.setenv("CN_MODEL_HUB_SPACE_RUNTIME_INSTALL_REQUIREMENTS", "false")
+    monkeypatch.setenv(
+        "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_BASE_URL", "https://runtime.example"
+    )
+    monkeypatch.setenv("CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_API_KEY", "runtime-key")
+    monkeypatch.setenv("CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_UPLOAD_METHOD", "ssh")
+    monkeypatch.setenv("CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_SSH_ALIAS", "gpu-box")
+    monkeypatch.setenv(
+        "CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_ROOT", "/srv/cn-model-hub-runtimes"
+    )
     monkeypatch.setenv("CN_MODEL_HUB_DEBUG_LOG_PAYLOADS", "true")
     monkeypatch.setenv("CN_MODEL_HUB_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("CN_MODEL_HUB_LOG_FORMAT", "terminal")
@@ -157,6 +169,14 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     assert cfg.app.lfs_keep_versions == 6
     assert cfg.app.lfs_auto_gc is True
     assert cfg.app.site_name == "Env Hub"
+    assert cfg.app.space_runtime_backend == "remote"
+    assert cfg.app.space_runtime_dir == ".remote-runtimes"
+    assert cfg.app.space_runtime_install_requirements is False
+    assert cfg.app.space_runtime_remote_base_url == "https://runtime.example"
+    assert cfg.app.space_runtime_remote_api_key == "runtime-key"
+    assert cfg.app.space_runtime_remote_upload_method == "ssh"
+    assert cfg.app.space_runtime_remote_ssh_alias == "gpu-box"
+    assert cfg.app.space_runtime_remote_root == "/srv/cn-model-hub-runtimes"
     assert cfg.app.debug_log_payloads is True
     assert cfg.app.log_level == "DEBUG"
     assert cfg.app.log_format == "terminal"
