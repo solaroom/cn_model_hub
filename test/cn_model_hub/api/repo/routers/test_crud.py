@@ -24,7 +24,7 @@ async def test_create_repository_and_reject_normalized_duplicate(owner_client):
     assert body["repo_id"] == "owner/sandbox-repo"
 
 
-async def test_admin_can_delete_empty_org_repository(admin_client, owner_client):
+async def test_owner_can_delete_empty_org_repository(owner_client):
     create_response = await owner_client.post(
         "/api/repos/create",
         json={
@@ -36,7 +36,7 @@ async def test_admin_can_delete_empty_org_repository(admin_client, owner_client)
     )
     assert create_response.status_code == 200
 
-    delete_response = await admin_client.request(
+    delete_response = await owner_client.request(
         "DELETE",
         "/api/repos/delete",
         json={"type": "dataset", "name": "temp-delete", "organization": "acme-labs"},

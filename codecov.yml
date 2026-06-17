@@ -5,7 +5,6 @@ coverage:
         flags:
           - backend
           - frontend
-          - frontend-admin
         paths:
           - "!src/cn-model-hub-ui/src/components/repo/RepoViewer.vue"
           - "!src/components/repo/RepoViewer.vue"
@@ -22,7 +21,6 @@ coverage:
         flags:
           - backend
           - frontend
-          - frontend-admin
         # Mirror the project-side exclusion. RepoViewer.vue is the
         # main Vue composite — hundreds of lines of orchestration
         # (dialog wiring, breadcrumb glue, share/clone modals, watcher

@@ -6,11 +6,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from test.cn_model_hub.support.bootstrap import (
-    ADMIN_TOKEN,
-    DEFAULT_PASSWORD,
-    ensure_python_paths,
-)
+from test.cn_model_hub.support.bootstrap import DEFAULT_PASSWORD, ensure_python_paths
 
 SERVICE_ROOT = Path(__file__).resolve().parents[3] / "hub-meta" / "test" / "backend-service"
 LAKEFS_CREDENTIALS_FILE = SERVICE_ROOT / "lakefs-credentials.env"
@@ -115,8 +111,6 @@ def apply_service_test_env() -> None:
         "CN_MODEL_HUB_TOKEN_EXPIRE_DAYS": "365",
         "CN_MODEL_HUB_REQUIRE_EMAIL_VERIFICATION": "false",
         "CN_MODEL_HUB_INVITATION_ONLY": "false",
-        "CN_MODEL_HUB_ADMIN_ENABLED": "true",
-        "CN_MODEL_HUB_ADMIN_SECRET_TOKEN": ADMIN_TOKEN,
         "CN_MODEL_HUB_FALLBACK_ENABLED": "false",
         "CN_MODEL_HUB_DISABLE_DATASET_VIEWER": "true",
         "CN_MODEL_HUB_LOG_LEVEL": "ERROR",

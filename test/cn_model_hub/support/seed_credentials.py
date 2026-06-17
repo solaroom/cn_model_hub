@@ -2,7 +2,7 @@
 
 The values here are the canonical answer to "which API tokens / SSH keys
 should the baseline ship with?" — the baseline ``build_baseline()`` plants
-exactly these rows, and admin-side tests assert against them.
+exactly these rows, and credential tests assert against them.
 
 Both ed25519 keypairs are real: the private key ships alongside its public
 key so future Git-over-SSH integration tests can sign with the matching

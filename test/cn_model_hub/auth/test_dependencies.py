@@ -141,18 +141,11 @@ def test_get_optional_user_and_get_external_tokens_cover_fallback_state(monkeypa
     assert auth_deps.get_external_tokens(SimpleNamespace(state=SimpleNamespace())) == {}
 
 
-def test_get_current_user_or_admin_covers_admin_user_and_failure_paths(monkeypatch):
-    monkeypatch.setattr(auth_deps.cfg.admin, "enabled", True)
-    monkeypatch.setattr(auth_deps.cfg.admin, "secret_token", "expected-secret")
-
-    admin_request = SimpleNamespace(state=SimpleNamespace())
-    assert auth_deps.get_current_user_or_admin(admin_request, x_admin_token="expected-secret") == (None, True)
-    assert admin_request.state.is_admin is True
-
+def test_get_current_user_or_admin_covers_user_and_failure_paths(monkeypatch):
     user = SimpleNamespace(username="alice")
     user_request = SimpleNamespace(state=SimpleNamespace())
     monkeypatch.setattr(auth_deps, "get_current_user", lambda *args, **kwargs: user)
-    assert auth_deps.get_current_user_or_admin(user_request, x_admin_token=None) == (user, False)
+    assert auth_deps.get_current_user_or_admin(user_request) == (user, False)
     assert user_request.state.is_admin is False
 
     monkeypatch.setattr(
@@ -161,7 +154,5 @@ def test_get_current_user_or_admin_covers_admin_user_and_failure_paths(monkeypat
         lambda *args, **kwargs: (_ for _ in ()).throw(HTTPException(status_code=401, detail="missing")),
     )
     with pytest.raises(HTTPException) as exc:
-        auth_deps.get_current_user_or_admin(
-            SimpleNamespace(state=SimpleNamespace()), x_admin_token=None
-        )
+        auth_deps.get_current_user_or_admin(SimpleNamespace(state=SimpleNamespace()))
     assert exc.value.status_code == 401

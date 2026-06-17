@@ -46,8 +46,8 @@ def test_record_local_hop_no_trace_context_is_no_op():
 def test_decode_trace_header_handles_invalid_base64():
     """Invalid base64 payload (e.g. wrong padding, non-ascii bytes)
     must return ``[]`` rather than propagate a ``binascii.Error`` or
-    ``UnicodeDecodeError`` — the admin tester reads response headers
-    without owning the encoder, so the decoder must tolerate junk."""
+    ``UnicodeDecodeError`` — debug clients read response headers without
+    owning the encoder, so the decoder must tolerate junk."""
     assert trace.decode_trace_header("not-base64-at-all!!!") == []
 
 

@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from cn_model_hub.api import (
-    admin,
     assistant,
     avatar,
     branches,
@@ -180,10 +179,10 @@ app.add_middleware(
         "X-Linked-Etag",
         "X-Linked-Size",
         "X-Xet-Hash",
-        # Chain trace (#78): the admin chain tester reads X-Chain-Trace
-        # from the response of a real request to render the per-hop
-        # timeline. The header carries no protocol semantics for
-        # huggingface_hub clients, which ignore unknown headers.
+        # Chain trace (#78): debug tooling reads X-Chain-Trace from the
+        # response of a real request to render the per-hop timeline. The
+        # header carries no protocol semantics for huggingface_hub clients,
+        # which ignore unknown headers.
         "X-Chain-Trace",
     ],
 )
@@ -210,7 +209,6 @@ app.include_router(mlflow.router, prefix=cfg.app.api_base, tags=["mlflow"])
 app.include_router(evaluations.router, prefix=cfg.app.api_base, tags=["evaluations"])
 app.include_router(invitation, prefix=cfg.app.api_base, tags=["invitations"])
 app.include_router(quota, tags=["quota"])
-app.include_router(admin.router, prefix="/admin/api", tags=["admin"])
 app.include_router(misc.router, prefix=cfg.app.api_base, tags=["utils"])
 app.include_router(org, prefix="/org", tags=["organizations"])
 app.include_router(git_http.router, tags=["git"])

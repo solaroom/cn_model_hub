@@ -1728,7 +1728,7 @@ def build_repo_seeds() -> tuple[RepoSeed, ...]:
                                 ## Release notes
 
                                 - reduced hallucinated currency markers on narrow receipt crops
-                                - added benchmark export used by the admin dashboard smoke tests
+                                - added benchmark export used by dashboard smoke tests
                                 """
                             ),
                         ),
@@ -4281,21 +4281,6 @@ LIKES: tuple[tuple[str, str, str, str], ...] = (
     ("mai_lin", "dataset", "aurora-labs", "receipt-layout-bench"),
 )
 
-# Global fallback sources installed via the admin API so a fresh local seed can
-# resolve public HuggingFace repos out-of-the-box. Namespace "" = global scope.
-FALLBACK_SOURCE_SEEDS: tuple[dict, ...] = (
-    {
-        "namespace": "",
-        "url": "https://huggingface.co",
-        "token": None,
-        "priority": 1000,
-        "name": "HuggingFace",
-        "source_type": "huggingface",
-        "enabled": True,
-    },
-)
-
-
 # ---------------------------------------------------------------------------
 # Credential plants (API tokens + SSH keys)
 # ---------------------------------------------------------------------------
@@ -4618,7 +4603,7 @@ async def plant_seed_ssh_keys(
     """Plant SSH keys via the public API so fingerprints are computed.
 
     Using the same endpoint a real user would hit means the planted
-    fingerprints are the canonical ones — admin tooling and future
+    fingerprints are the canonical ones — tooling and future
     Git-over-SSH smokes can assert against the values in
     ``SEED_SSH_KEY_PLANTS`` without having to recompute them.
     """
@@ -4703,39 +4688,6 @@ async def configure_user_profile(client: httpx.AsyncClient, account: AccountSeed
         account.username,
         account.avatar_bg,
         account.avatar_accent,
-    )
-
-
-def admin_headers() -> dict[str, str]:
-    return {"X-Admin-Token": cfg.admin.secret_token}
-
-
-async def ensure_fallback_source(
-    client: httpx.AsyncClient, source: dict
-) -> None:
-    list_response = await client.get(
-        "/admin/api/fallback-sources",
-        params={"namespace": source["namespace"]},
-        headers=admin_headers(),
-    )
-    await ensure_response(
-        list_response,
-        f"list fallback sources for namespace={source['namespace']!r}",
-    )
-
-    normalized_url = source["url"].rstrip("/")
-    for existing in list_response.json():
-        if existing["url"].rstrip("/") == normalized_url:
-            return
-
-    create_response = await client.post(
-        "/admin/api/fallback-sources",
-        json=source,
-        headers=admin_headers(),
-    )
-    await ensure_response(
-        create_response,
-        f"create fallback source {source['name']} ({normalized_url})",
     )
 
 
@@ -5101,10 +5053,6 @@ def build_manifest() -> dict:
             for account in ACCOUNTS
             if account.username != PRIMARY_USERNAME
         ],
-        "admin_ui": {
-            "url": "http://127.0.0.1:5174",
-            "token": cfg.admin.secret_token,
-        },
         "organizations": [
             {
                 "name": organization.name,
@@ -5123,16 +5071,6 @@ def build_manifest() -> dict:
                 "private": repo.private,
             }
             for repo in REPO_SEEDS
-        ],
-        "fallback_sources": [
-            {
-                "namespace": source["namespace"],
-                "url": source["url"].rstrip("/"),
-                "name": source["name"],
-                "source_type": source["source_type"],
-                "priority": source["priority"],
-            }
-            for source in FALLBACK_SOURCE_SEEDS
         ],
         "api_tokens": [
             {
@@ -5172,7 +5110,6 @@ def print_summary(seed_applied: bool) -> None:
     print(f"Main UI: {cfg.app.base_url}")
     print(f"Backend: {INTERNAL_BASE_URL}")
     print(f"Login: {PRIMARY_USERNAME} / {DEFAULT_PASSWORD}")
-    print(f"Admin UI token: {cfg.admin.secret_token}")
 
 
 async def seed_demo_data() -> None:
@@ -5202,9 +5139,6 @@ async def seed_demo_data() -> None:
 
         for account in ACCOUNTS:
             await register_account(seed_client, account)
-
-        for fallback_source in FALLBACK_SOURCE_SEEDS:
-            await ensure_fallback_source(seed_client, fallback_source)
 
         authed_clients: dict[str, httpx.AsyncClient] = {}
         for account in ACCOUNTS:

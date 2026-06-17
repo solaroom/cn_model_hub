@@ -140,7 +140,7 @@ def start_trace() -> list[dict]:
         inject_trace_header(response, hops)
 
     Calling ``start_trace`` while a trace is already active replaces it
-    (no nesting — admin endpoints don't fan out).
+    (no nesting because debug calls do not fan out).
     """
     hops: list[dict] = []
     _chain_trace.set(hops)
@@ -253,7 +253,7 @@ def decode_trace_header(header_value: str) -> list[dict]:
     """Decode an ``X-Chain-Trace`` header value back into a hop list.
 
     Tolerates malformed input (returns ``[]``) so a caller never has to
-    catch — particularly relevant for the admin tester UI that reads
+    catch — particularly relevant for debug tooling that reads
     response headers without owning the encoder.
     """
     try:

@@ -7,7 +7,7 @@ This module is the **only** entry point for cache reads/writes. Hand-rolled
 - Two-level singleflight (cross-worker + intra-worker)
 - Silent-degradation contract (a flaky Valkey must produce cache misses,
   never request errors)
-- Namespace metrics (admin observability)
+- Namespace metrics (operator observability)
 - Boot-time flush coordinator (Mode-B namespaces are wiped on every Valkey
   restart, regardless of API restarts; Mode-A namespaces survive)
 
@@ -91,7 +91,7 @@ SCAN_BATCH_SIZE = 500
 
 @dataclass
 class CacheMetrics:
-    """In-process counters for the admin observability endpoint.
+    """In-process counters for the observability endpoint.
 
     Reset on process restart by design — these are operational signals, not
     business data.
@@ -632,7 +632,7 @@ async def read_gen(scope_key: str) -> int:
 
 
 def get_metrics_snapshot() -> dict:
-    """Return a snapshot of in-process cache metrics for the admin endpoint."""
+    """Return a snapshot of in-process cache metrics."""
     return {
         "configured_enabled": cfg.cache.enabled,
         "client_initialized": _client is not None,
@@ -660,7 +660,7 @@ def reset_metrics() -> None:
 
 
 async def get_memory_info() -> dict:
-    """Probe Valkey for memory + eviction info (for the admin endpoint)."""
+    """Probe Valkey for memory + eviction info."""
     client = _get_client()
     if client is None:
         return {"available": False, "reason": "client not initialized"}

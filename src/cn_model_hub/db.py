@@ -137,7 +137,7 @@ class UserExternalToken(BaseModel):
     """User-specific external fallback source tokens.
 
     Allows users to provide their own tokens for external sources (HuggingFace, etc.).
-    User tokens override admin-configured tokens for matching URLs.
+    User tokens override globally configured tokens for matching URLs.
     """
 
     id = AutoField()

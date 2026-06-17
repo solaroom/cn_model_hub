@@ -6,7 +6,7 @@ import httpx
 import pytest
 import pytest_asyncio
 
-from test.cn_model_hub.support.bootstrap import ADMIN_TOKEN, DEFAULT_PASSWORD
+from test.cn_model_hub.support.bootstrap import DEFAULT_PASSWORD
 from test.cn_model_hub.support.live_server import start_live_server, stop_live_server
 from test.cn_model_hub.support.service_bootstrap import apply_service_test_env
 from test.cn_model_hub.support.service_state import create_service_test_state
@@ -24,7 +24,6 @@ _BACKEND_FIXTURE_NAMES = {
     "member_client",
     "visitor_client",
     "outsider_client",
-    "admin_client",
     "live_server_url",
     "hf_api_token",
 }
@@ -166,18 +165,6 @@ async def outsider_client(app):
             json={"username": "outsider", "password": DEFAULT_PASSWORD},
         )
         response.raise_for_status()
-        yield async_client
-
-
-@pytest_asyncio.fixture
-async def admin_client(app):
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport,
-        base_url="http://testserver",
-        follow_redirects=False,
-        headers={"X-Admin-Token": ADMIN_TOKEN},
-    ) as async_client:
         yield async_client
 
 

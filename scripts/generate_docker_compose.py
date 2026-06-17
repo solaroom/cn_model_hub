@@ -336,7 +336,6 @@ def generate_hub_api_service(config: dict) -> str:
 
       ## ===== CRITICAL: Security Configuration (MUST CHANGE) =====
       - CN_MODEL_HUB_SESSION_SECRET={config["session_secret"]}
-      - CN_MODEL_HUB_ADMIN_SECRET_TOKEN={config["admin_secret"]}
       - CN_MODEL_HUB_DATABASE_KEY={config["database_key"]}
 
       ## ===== Performance Configuration =====
@@ -376,7 +375,6 @@ def generate_hub_api_service(config: dict) -> str:
       - CN_MODEL_HUB_INVITATION_ONLY=false # Set to true to require invitation for registration
       - CN_MODEL_HUB_SESSION_EXPIRE_HOURS=168
       - CN_MODEL_HUB_TOKEN_EXPIRE_DAYS=365
-      - CN_MODEL_HUB_ADMIN_ENABLED=true
       # SMTP (Optional - for email verification)
       - CN_MODEL_HUB_SMTP_ENABLED=false
       - CN_MODEL_HUB_SMTP_HOST=smtp.gmail.com
@@ -413,7 +411,6 @@ def generate_hub_ui_service() -> str:
       - "28080:80" # Public web interface
     volumes:
       - ./src/cn-model-hub-ui/dist:/usr/share/nginx/html
-      - ./src/cn-model-hub-admin/dist:/usr/share/nginx/html-admin
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - hub-api
@@ -547,9 +544,6 @@ def load_config_file(config_path: Path) -> dict:
         config["session_secret"] = sec.get(
             "session_secret", fallback=generate_secret(48)
         )  # 64 chars
-        config["admin_secret"] = sec.get(
-            "admin_secret", fallback=generate_secret(48)
-        )  # 64 chars
         config["database_key"] = sec.get(
             "database_key", fallback=generate_secret(32)
         )  # 43 chars
@@ -565,7 +559,6 @@ def load_config_file(config_path: Path) -> dict:
         )  # Metrics API token
     else:
         config["session_secret"] = generate_secret(48)  # 64 chars
-        config["admin_secret"] = generate_secret(48)  # 64 chars
         config["database_key"] = generate_secret(32)  # 43 chars for encryption
         config["garage_rpc_secret"] = secrets.token_hex(32)  # 64 hex chars for Garage
         config["garage_admin_token"] = generate_secret(32)
@@ -637,9 +630,8 @@ provider = minio
 #   signature_version =  # Leave empty for MinIO (uses default)
 
 [security]
-# Session and admin secrets (auto-generated if not specified)
+# Session secret (auto-generated if not specified)
 # session_secret = your-session-secret-here
-# admin_secret = your-admin-secret-here
 # database_key = your-database-encryption-key-here  # For encrypting external fallback tokens
 
 [network]
@@ -846,12 +838,6 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
     if isinstance(config["session_secret"], dict):
         config["session_secret"] = None
 
-    config["admin_secret"] = get_existing(
-        "CN_MODEL_HUB_ADMIN_SECRET_TOKEN", "admin.secret_token"
-    )
-    if isinstance(config["admin_secret"], dict):
-        config["admin_secret"] = None
-
     # NEW FIELD: database_key
     config["database_key"] = get_existing("CN_MODEL_HUB_DATABASE_KEY", "app.database_key")
     if isinstance(config["database_key"], dict):
@@ -873,12 +859,6 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
         config["session_secret"] = generate_secret(48)
     else:
         print(f"   Session secret: (exists)")
-
-    if not config["admin_secret"]:
-        print("\n⚠ Admin secret missing - generating new one")
-        config["admin_secret"] = generate_secret(48)
-    else:
-        print(f"   Admin secret: (exists)")
 
     # LakeFS encryption key - MUST preserve existing value or generate only if missing
     config["lakefs_encrypt_key"] = get_existing("LAKEFS_ENCRYPT_SECRET_KEY")
@@ -1301,21 +1281,6 @@ def interactive_config() -> dict:
     else:
         config["session_secret"] = ask_string("Session secret key")
 
-    print()
-    same_as_session = ask_yes_no("Use same secret for admin token?", default=False)
-
-    if same_as_session:
-        config["admin_secret"] = config["session_secret"]
-    else:
-        default_admin_secret = generate_secret(48)  # 64 chars for admin token
-        print(f"Generated admin secret: {default_admin_secret}")
-        use_generated_admin = ask_yes_no("Use generated admin secret?", default=True)
-
-        if use_generated_admin:
-            config["admin_secret"] = default_admin_secret
-        else:
-            config["admin_secret"] = ask_string("Admin secret token")
-
     # Database encryption key (for external tokens)
     print()
     default_database_key = generate_secret(32)  # 43 chars for Fernet encryption
@@ -1424,10 +1389,6 @@ session_secret = "{config["session_secret"]}"
 session_expire_hours = 168  # 7 days
 token_expire_days = 365
 
-[admin]
-enabled = true
-secret_token = "{config["admin_secret"]}"
-
 [quota]
 default_user_private_quota_bytes = 10_000_000      # 10MB
 default_user_public_quota_bytes = 100_000_000      # 100MB
@@ -1519,7 +1480,6 @@ def generate_and_write_files(config: dict):
     if config.get("external_network"):
         print(f"External Network: {config['external_network']}")
     print(f"Session Secret: {config['session_secret'][:20]}...")
-    print(f"Admin Secret: {config['admin_secret'][:20]}...")
     print("-" * 60)
     print()
     print("Next steps:")

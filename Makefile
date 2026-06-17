@@ -10,12 +10,10 @@ COV_TYPES ?= xml term-missing
 PYTEST_ARGS ?= -ra -vv --durations=10 --cov=$(COV_RANGE) --cov-config=.coveragerc --cov-fail-under=$(COV_FAIL_UNDER) $(shell for type in $(COV_TYPES); do echo --cov-report=$$type; done)
 UI_DIR ?= src/cn-model-hub-ui
 UI_TEST_ROOT ?= test/cn-model-hub-ui
-UI_ADMIN_DIR ?= src/cn-model-hub-admin
-UI_ADMIN_TEST_ROOT ?= test/cn-model-hub-admin
 
 .PHONY: help init-env install-backend install-frontend install infra-up infra-down \
-	backend seed-demo reset-local-data reset-and-seed ui ui-only admin status \
-	logs-postgres logs-minio logs-lakefs test test-backend test-ui test-ui-admin \
+	backend seed-demo reset-local-data reset-and-seed ui ui-only status \
+	logs-postgres logs-minio logs-lakefs test test-backend test-ui \
 	verify-seed-demo
 
 help:
@@ -31,16 +29,14 @@ help:
 	@echo "  make reset-local-data Dangerously clear local cn_model_hub dev data through the local reset helper"
 	@echo "  make reset-and-seed   Reset persisted local data, then bootstrap fresh demo data"
 	@echo "  make backend          Run FastAPI backend in reload mode"
-	@echo "  make ui               Run main UI on :5173 with admin mounted at /admin (admin Vite on :5174)"
-	@echo "  make ui-only          Run only the main Vite frontend on :5173 (no admin)"
-	@echo "  make admin            Run only the admin Vite frontend on :5174"
+	@echo "  make ui               Run the main Vite frontend on :5173"
+	@echo "  make ui-only          Run the main Vite frontend on :5173"
 	@echo "  make test-backend     Run the backend pytest suite against the real test services with coverage"
 	@echo "                        Example: make test-backend RANGE_DIR=api"
 	@echo "                        Example: make test-backend RANGE_DIR=api/repo/routers"
 	@echo "                        Options: COV_TYPES='xml term-missing'"
 	@echo "  make test-ui          Run the main UI Vitest suite with coverage"
-	@echo "  make test-ui-admin    Run the admin UI Vitest suite with coverage"
-	@echo "  make test             Run backend tests, then main UI tests, then admin UI tests"
+	@echo "  make test             Run backend tests, then main UI tests"
 	@echo "  make status           Show local dev infra container status"
 	@echo "  make logs-postgres    Tail Postgres logs"
 	@echo "  make logs-minio       Tail MinIO logs"
@@ -97,22 +93,10 @@ reset-and-seed: reset-local-data
 	$(MAKE) seed-demo
 
 ui:
-	@# Run admin and main UI together. They share this recipe shell's process
-	@# group (no `set -m`), so SIGINT from the terminal — and the explicit
-	@# `kill 0` on exit — propagate to both vite servers cleanly.
-	@# Use `exec ./node_modules/.bin/vite` instead of `pnpm dev` because
-	@# the package manager process does not reliably forward SIGINT/SIGTERM
-	@# to its child process in every shell environment.
-	@trap 'kill 0 2>/dev/null' EXIT INT TERM; \
-	( cd src/cn-model-hub-admin && exec ./node_modules/.bin/vite ) & \
-	( cd src/cn-model-hub-ui    && exec ./node_modules/.bin/vite ) & \
-	wait
+	pnpm run dev:ui
 
 ui-only:
 	pnpm run dev:ui
-
-admin:
-	pnpm run dev:admin
 
 test-backend:
 	@if [[ ! -e "$(TEST_RANGE)" ]]; then \
@@ -136,18 +120,7 @@ test-ui:
 	fi
 	pnpm run test:ui
 
-test-ui-admin:
-	@if [[ ! -d "$(UI_ADMIN_DIR)" ]]; then \
-		echo "Missing admin UI directory: $(UI_ADMIN_DIR)" >&2; \
-		exit 1; \
-	fi
-	@if [[ ! -d "$(UI_ADMIN_TEST_ROOT)" ]]; then \
-		echo "Missing admin UI test directory: $(UI_ADMIN_TEST_ROOT)" >&2; \
-		exit 1; \
-	fi
-	pnpm run test:admin
-
-test: test-backend test-ui test-ui-admin
+test: test-backend test-ui
 
 status:
 	docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep 'cn_model_hub-dev-' || true

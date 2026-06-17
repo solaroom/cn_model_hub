@@ -50,13 +50,6 @@ class AuthConfig(BaseModel):
     token_expire_days: int = 365
 
 
-class AdminConfig(BaseModel):
-    """Admin API configuration."""
-
-    enabled: bool = True
-    secret_token: str = "change-me-in-production"
-
-
 class QuotaConfig(BaseModel):
     """Storage quota configuration."""
 
@@ -227,7 +220,6 @@ class Config(BaseModel):
     lakefs: LakeFSConfig
     smtp: SMTPConfig = SMTPConfig()
     auth: AuthConfig = AuthConfig()
-    admin: AdminConfig = AdminConfig()
     quota: QuotaConfig = QuotaConfig()
     fallback: FallbackConfig = FallbackConfig()
     cache: CacheConfig = CacheConfig()
@@ -260,11 +252,6 @@ class Config(BaseModel):
         # Auth secrets
         if self.auth.session_secret == "change-me-in-production":
             warnings.append("Session secret is using default value - SECURITY RISK!")
-        if self.admin.secret_token == "change-me-in-production":
-            warnings.append(
-                "Admin secret token is using default value - SECURITY RISK!"
-            )
-
         # LFS GC settings validation
         if self.app.lfs_keep_versions < 2:
             warnings.append(
@@ -401,15 +388,6 @@ def load_config(path: str = None) -> Config:
         auth_env["token_expire_days"] = int(os.environ["CN_MODEL_HUB_TOKEN_EXPIRE_DAYS"])
     if auth_env:
         config_from_env["auth"] = auth_env
-
-    # Admin
-    admin_env = {}
-    if "CN_MODEL_HUB_ADMIN_ENABLED" in os.environ:
-        admin_env["enabled"] = os.environ["CN_MODEL_HUB_ADMIN_ENABLED"].lower() == "true"
-    if "CN_MODEL_HUB_ADMIN_SECRET_TOKEN" in os.environ:
-        admin_env["secret_token"] = os.environ["CN_MODEL_HUB_ADMIN_SECRET_TOKEN"]
-    if admin_env:
-        config_from_env["admin"] = admin_env
 
     # Quota
     quota_env = {}
@@ -631,7 +609,6 @@ def load_config(path: str = None) -> Config:
     lakefs_config = LakeFSConfig(**merged_config.get("lakefs", {}))
     smtp_config = SMTPConfig(**merged_config.get("smtp", {}))
     auth_config = AuthConfig(**merged_config.get("auth", {}))
-    admin_config = AdminConfig(**merged_config.get("admin", {}))
     quota_config = QuotaConfig(**merged_config.get("quota", {}))
     fallback_config = FallbackConfig(**merged_config.get("fallback", {}))
     cache_config = CacheConfig(**merged_config.get("cache", {}))
@@ -644,7 +621,6 @@ def load_config(path: str = None) -> Config:
         lakefs=lakefs_config,
         smtp=smtp_config,
         auth=auth_config,
-        admin=admin_config,
         quota=quota_config,
         fallback=fallback_config,
         cache=cache_config,

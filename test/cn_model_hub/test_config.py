@@ -25,7 +25,6 @@ def test_validate_production_safety_and_parser_helpers():
     assert any("S3 access_key" in warning for warning in warnings)
     assert any("LakeFS secret_key" in warning for warning in warnings)
     assert any("Session secret" in warning for warning in warnings)
-    assert any("Admin secret token" in warning for warning in warnings)
     assert any("keep_versions=1" in warning for warning in warnings)
     assert any("512 bytes" in warning for warning in warnings)
 
@@ -83,8 +82,6 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     monkeypatch.setenv("CN_MODEL_HUB_SESSION_SECRET", "session-secret")
     monkeypatch.setenv("CN_MODEL_HUB_SESSION_EXPIRE_HOURS", "12")
     monkeypatch.setenv("CN_MODEL_HUB_TOKEN_EXPIRE_DAYS", "30")
-    monkeypatch.setenv("CN_MODEL_HUB_ADMIN_ENABLED", "false")
-    monkeypatch.setenv("CN_MODEL_HUB_ADMIN_SECRET_TOKEN", "admin-secret")
     monkeypatch.setenv("CN_MODEL_HUB_DEFAULT_USER_PRIVATE_QUOTA_BYTES", "100")
     monkeypatch.setenv("CN_MODEL_HUB_DEFAULT_USER_PUBLIC_QUOTA_BYTES", "unlimited")
     monkeypatch.setenv("CN_MODEL_HUB_DEFAULT_ORG_PRIVATE_QUOTA_BYTES", "200")
@@ -136,8 +133,6 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     assert cfg.auth.require_email_verification is True
     assert cfg.auth.invitation_only is True
     assert cfg.auth.session_secret == "session-secret"
-    assert cfg.admin.enabled is False
-    assert cfg.admin.secret_token == "admin-secret"
     assert cfg.quota.default_user_private_quota_bytes == 100
     assert cfg.quota.default_user_public_quota_bytes is None
     assert cfg.quota.default_org_private_quota_bytes == 200

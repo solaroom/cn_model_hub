@@ -64,7 +64,6 @@ def main():
     print("=" * 60)
     print("\nAccess Points:")
     print("   Main UI:    http://localhost:28080")
-    print("   Admin UI:   http://localhost:28080/admin")
     print("   API:        http://localhost:28080/api")
     print("   API Docs:   http://localhost:28080/docs")
     print("\nTip: View logs with: docker compose logs -f")

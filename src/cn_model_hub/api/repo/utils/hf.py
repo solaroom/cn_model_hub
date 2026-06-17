@@ -45,7 +45,7 @@ class HFErrorCode:
 
     # cn_model_hub-only extensions (not recognized by hf_raise_for_status —
     # downstream HF clients see these as generic HfHubHTTPError; our SPA
-    # and admin tooling key off them for branching).
+    # and platform tooling key off them for branching).
     REPO_EXISTS = "RepoExists"
     BAD_REQUEST = "BadRequest"
     INVALID_REPO_TYPE = "InvalidRepoType"

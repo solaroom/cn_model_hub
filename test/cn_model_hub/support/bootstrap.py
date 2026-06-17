@@ -11,7 +11,6 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SRC_DIR = ROOT_DIR / "src"
 DEFAULT_PASSWORD = "CnModelHubTest123!"
-ADMIN_TOKEN = "test-admin-token"
 
 
 def ensure_python_paths() -> None:
@@ -57,8 +56,6 @@ class BackendModules:
     branches_module: object
     misc_module: object
     external_tokens_module: object
-    admin_users_module: object
-    admin_repositories_module: object
     lakefs_rest_client_module: object
     repo_gc_module: object
     git_lfs_module: object
@@ -101,10 +98,6 @@ def load_backend_modules(
     external_tokens_module = importlib.import_module(
         "cn_model_hub.api.auth.external_tokens"
     )
-    admin_users_module = importlib.import_module("cn_model_hub.api.admin.routers.users")
-    admin_repositories_module = importlib.import_module(
-        "cn_model_hub.api.admin.routers.repositories"
-    )
     lakefs_rest_client_module = importlib.import_module("cn_model_hub.lakefs_rest_client")
     repo_gc_module = importlib.import_module("cn_model_hub.api.repo.utils.gc")
     git_lfs_module = importlib.import_module("cn_model_hub.api.git.routers.lfs")
@@ -134,8 +127,6 @@ def load_backend_modules(
         branches_module=branches_module,
         misc_module=misc_module,
         external_tokens_module=external_tokens_module,
-        admin_users_module=admin_users_module,
-        admin_repositories_module=admin_repositories_module,
         lakefs_rest_client_module=lakefs_rest_client_module,
         repo_gc_module=repo_gc_module,
         git_lfs_module=git_lfs_module,

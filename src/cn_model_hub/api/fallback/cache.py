@@ -11,7 +11,7 @@ Strict-freshness contract (#79):
   request carrying ``Authorization: Bearer ...|url,token|...`` external
   tokens cannot read another request's binding.
 - Three independent monotonic generation counters (``global_gen``,
-  ``user_gens``, ``repo_gens``) close the "admin/user/repo mutation
+  ``user_gens``, ``repo_gens``) close the "global/user/repo mutation
   lands while a probe is in flight, and the probe writes a stale
   binding after the invalidation" race. ``safe_set`` rejects writes
   whose starting snapshot disagrees with the current generations.
@@ -212,7 +212,7 @@ class RepoSourceCache:
 
         Returns True if the entry was written; False if any of the
         three generation counters has been bumped between
-        ``gens_at_start`` and now (admin source mutation, user token
+        ``gens_at_start`` and now (source configuration mutation, user token
         rotation, or repo CRUD landed mid-probe).
 
         On rejection the cache stays empty for this (user, tokens, repo)
@@ -278,8 +278,7 @@ class RepoSourceCache:
         evicted.
 
         Triggered by local repo create/delete/move/visibility-toggle
-        and the admin per-repo eviction endpoint — see the strict
-        freshness contract.
+        events — see the strict freshness contract.
         """
         key = (repo_type, namespace, name)
         self.repo_gens[key] = self.repo_gens.get(key, 0) + 1
@@ -301,8 +300,7 @@ class RepoSourceCache:
         for that user has its ``safe_set`` rejected. Returns the
         number of cache entries evicted.
 
-        Triggered by user external-token POST/DELETE/PUT bulk and the
-        admin per-user eviction endpoint.
+        Triggered by user external-token POST/DELETE/PUT bulk.
         """
         self.user_gens[user_id] = self.user_gens.get(user_id, 0) + 1
         prefix = f"fallback:repo:u={self._user_key(user_id)}:"
@@ -321,15 +319,15 @@ class RepoSourceCache:
     def clear(self) -> None:
         """Wipe the entire cache; bump ``global_gen``.
 
-        Triggered by admin source list mutations (create/update/delete)
-        and the admin global cache-clear endpoint.
+        Triggered by source list mutations (create/update/delete) and
+        global cache-clear operations.
         """
         self.global_gen += 1
         self.cache.clear()
         logger.info("Cache cleared (global_gen bumped)")
 
     def stats(self) -> dict:
-        """Return cache statistics for the admin / observability surface."""
+        """Return cache statistics for the observability surface."""
         return {
             "size": len(self.cache),
             "maxsize": self.cache.maxsize,

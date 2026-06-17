@@ -10,8 +10,7 @@ from typing import Iterable
 
 from fastapi import APIRouter, Depends, Query
 
-from cn_model_hub.api.admin.utils import verify_admin_token
-from cn_model_hub.auth.dependencies import get_optional_user
+from cn_model_hub.auth.dependencies import get_current_user, get_optional_user
 from cn_model_hub.auth.permissions import RepoReadDeniedError, check_repo_read_permission
 from cn_model_hub.db import Repository, User
 from cn_model_hub import search_index
@@ -393,5 +392,5 @@ async def search_index_status():
 
 
 @router.post("/search/index/rebuild")
-async def rebuild_search_index(_admin: bool = Depends(verify_admin_token)):
+async def rebuild_search_index(_user: User = Depends(get_current_user)):
     return search_index.rebuild_repository_index()

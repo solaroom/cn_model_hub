@@ -117,7 +117,7 @@ class FallbackClient:
         headers = kwargs.pop("headers", None) or {}
 
         # Add authentication if token available
-        # IMPORTANT: Only use admin-configured token, NEVER user auth!
+        # IMPORTANT: Only use a configured source token, NEVER user auth.
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
 

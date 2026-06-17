@@ -22,7 +22,6 @@
 cn_model_hub/
 ├── src/cn_model_hub/              # FastAPI 后端、数据库模型、搜索、评测、Space 运行时
 ├── src/cn-model-hub-ui/           # 用户前台：模型、数据集、空间、排行榜、助手
-├── src/cn-model-hub-admin/        # 管理后台：用户、仓库、存储、缓存、健康状态
 ├── docs/platform-knowledge/       # 平台中文知识库，智能助手只索引这个目录
 ├── examples/models/               # 演示模型模板，例如 Qwen2.5 本地 Demo
 ├── examples/datasets/             # 演示数据集，例如 C-Eval 20 题快速评测样本
@@ -61,7 +60,6 @@ docker compose up -d --build hub-api hub-ui
 常用访问地址：
 
 - 前台页面：http://127.0.0.1:28080
-- 管理后台：http://127.0.0.1:28080/admin
 - 后端 API：http://127.0.0.1:48888
 - API 文档：http://127.0.0.1:48888/docs
 - LakeFS：http://127.0.0.1:28000
@@ -73,7 +71,6 @@ docker compose up -d --build hub-api hub-ui
 
 - 普通用户：`mai_lin`
 - 密码：`CnModelHub123!`
-- 管理后台令牌：`dev-admin-token-change-me`
 - Meilisearch Key：`dev-meili-master-key`
 - MinIO：`minioadmin / minioadmin`
 
@@ -131,7 +128,7 @@ Docker Compose 已包含 Meilisearch。重建站内搜索索引：
 
 ```bash
 curl -X POST http://127.0.0.1:48888/api/search/index/rebuild \
-  -H "X-Admin-Token: dev-admin-token-change-me"
+  -H "Authorization: Bearer <your-token>"
 ```
 
 查看索引状态：

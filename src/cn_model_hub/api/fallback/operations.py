@@ -39,7 +39,7 @@ def _resolve_user_id(user) -> Optional[int]:
 # Plan A: only these client request headers are forwarded upstream on
 # resolve probes. Authorization / Cookie / Proxy-Authorization are
 # deliberately excluded — the only credential allowed upstream is the
-# admin-configured source token attached by ``FallbackClient`` itself.
+# configured source token attached by ``FallbackClient`` itself.
 # Accept-Encoding is excluded because httpx auto-decompresses responses,
 # which would corrupt the redirect-passthrough contract.
 _FORWARDABLE_RESOLVE_HEADERS: tuple[str, ...] = (
@@ -318,7 +318,7 @@ async def _run_cached_then_chain(
             # Strict-consistency rule #3: orphaned cache (admin
             # removed the source from config) must invalidate so the
             # chain can find a new home for this repo_id. Per-entry
-            # delete (no gen bump) — admin source mutation already
+            # delete (no gen bump) — source mutation already
             # bumped global_gen via cache.clear().
             logger.debug(
                 f"Cache hit on orphan source url={cached_url} "
@@ -617,7 +617,7 @@ async def _resolve_one_source(
     # Update cache so subsequent requests skip the chain probe.
     # ``safe_set`` rejects the write if any of the three generation
     # counters has been bumped since the snapshot at probe entry —
-    # admin source mutation, this user's token rotation, or this
+    # source mutation, this user's token rotation, or this
     # repo's local CRUD (create/delete/move/visibility) all bump
     # their respective counters and force a re-probe on the next call.
     cache.safe_set(

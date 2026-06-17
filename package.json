@@ -4,15 +4,11 @@
   "packageManager": "pnpm@10.18.1",
   "scripts": {
     "dev:ui": "pnpm -F cn-model-hub-ui dev",
-    "dev:admin": "pnpm -F cn-model-hub-admin dev",
     "build:ui": "pnpm -F cn-model-hub-ui build",
-    "build:admin": "pnpm -F cn-model-hub-admin build",
-    "build": "pnpm -r -F cn-model-hub-ui -F cn-model-hub-admin build",
+    "build": "pnpm -r -F cn-model-hub-ui build",
     "format:ui": "pnpm -F cn-model-hub-ui format",
-    "format:admin": "pnpm -F cn-model-hub-admin format",
-    "format": "pnpm -r -F cn-model-hub-ui -F cn-model-hub-admin format",
+    "format": "pnpm -r -F cn-model-hub-ui format",
     "test:ui": "pnpm -F cn-model-hub-ui test",
-    "test:admin": "pnpm -F cn-model-hub-admin test",
-    "test": "pnpm -r -F cn-model-hub-ui -F cn-model-hub-admin test"
+    "test": "pnpm -r -F cn-model-hub-ui test"
   }
 }

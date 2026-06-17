@@ -403,8 +403,6 @@ async def delete_repo(
 ):
     """Delete a repository. (NOTE: This is IRREVERSIBLE)
 
-    Accepts both user authentication and admin token (X-Admin-Token header).
-
     Args:
         name: Repository name.
         organization: Organization name (optional, defaults to user namespace).
@@ -820,7 +818,6 @@ async def move_repo(
     """Move/rename a repository.
 
     Matches HuggingFace Hub API: POST /api/repos/move
-    Accepts both user authentication and admin token (X-Admin-Token header).
 
     Args:
         payload: Move parameters
@@ -981,8 +978,6 @@ async def squash_repo(
     1. Moves repository to temporary name
     2. Moves back to original name
     3. Result: All commit history cleared, only current state preserved
-
-    Accepts both user authentication and admin token (X-Admin-Token header).
 
     Args:
         payload: Squash parameters

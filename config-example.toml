@@ -36,10 +36,6 @@ session_secret = "CHANGE-ME-GENERATE-RANDOM"  # Use: python -c "import secrets; 
 session_expire_hours = 168  # 7 days
 token_expire_days = 365
 
-[admin]
-enabled = true
-secret_token = "CHANGE-ME-GENERATE-RANDOM"  # Use: python -c "import secrets; print(secrets.token_urlsafe(48))"
-
 [quota]
 # Default storage quotas for new users/organizations (in bytes, null = unlimited)
 default_user_private_quota_bytes = 10_000_000_000    # 10GB for private repos

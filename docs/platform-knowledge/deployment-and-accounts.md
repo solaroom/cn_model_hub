@@ -30,7 +30,6 @@ docker compose up -d --build hub-api hub-ui
 
 - 用户名：`mai_lin`
 - 密码：`CnModelHub123!`
-- 管理后台令牌：`dev-admin-token-change-me`
 
 ## 大模型配置
 

@@ -1,4 +1,4 @@
-"""Pure chain-probe primitive used by the admin debug surface (#78).
+"""Pure chain-probe primitive used by debug tooling (#78).
 
 ``probe_chain`` walks an explicitly-supplied source list, performs the
 appropriate HTTP probe per source for the requested operation, classifies
@@ -13,7 +13,7 @@ Differences from the production path in ``operations.py``:
 - **No FastAPI request context.** Sources, tokens, and probe params come
   in as plain values — no dependency on FastAPI's ``Request`` /
   ``Depends`` machinery. Callable from unit tests, scripts, and the
-  admin debug endpoint alike.
+  debug endpoints alike.
 - **Single-call per source.** Where ``operations._resolve_one_source``
   does HEAD-then-GET and commits to a bound source for the GET phase,
   the tester probe issues exactly one HTTP call per source matched to
@@ -60,7 +60,8 @@ _BODY_PREVIEW_LIMIT = 4096
 # internal CDN bookkeeping not useful for a chain-debug timeline.
 #
 # Mirrored on the frontend at
-# ``src/cn-model-hub-admin/src/utils/api.js:_PROBE_RELEVANT_HEADERS``.
+# The trace schema is intentionally compact because it is returned in the
+# X-Chain-Trace response header.
 # When adding / removing entries here, update the frontend list too;
 # they're deliberately separate (build-time bundle decoupling) but
 # semantically the same allowlist.

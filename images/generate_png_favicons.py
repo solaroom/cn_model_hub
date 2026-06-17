@@ -60,7 +60,6 @@ def main():
 
     # Output directories
     ui_public = script_dir.parent / "src" / "cn-model-hub-ui" / "public"
-    admin_public = script_dir.parent / "src" / "cn-model-hub-admin" / "public"
 
     print(f"Generating PNG favicons from {svg_path}...")
     print()
@@ -88,7 +87,7 @@ def main():
     print()
 
     # Generate favicons for both directories
-    for output_dir in [ui_public, admin_public]:
+    for output_dir in [ui_public]:
         print(f"Generating favicons for {output_dir.name}...")
 
         for size, filename in sizes:
