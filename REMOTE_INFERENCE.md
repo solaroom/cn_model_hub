@@ -92,10 +92,9 @@ SeetaCloud 当前端口映射：
 127.0.0.1:6008 -> https://uu866823-86b2-6cbcbbb3.westb.seetacloud.com:8443/
 ```
 
-如果 `6008` 已被其他服务占用，需要将 DeepSeek API 与 Runtime Agent 合并到同一个 FastAPI 应用中，用不同路径区分：
+端口 `6008` 运行独立的 Runtime Agent，提供以下路径：
 
 ```text
-/v1/chat/completions
 /api/runtime/start
 /api/runtime/stop
 /api/runtime/status/{runtime_key}

@@ -6,7 +6,6 @@ import shutil
 import socket
 import tarfile
 import time
-import uuid
 from collections import deque
 from pathlib import Path
 from typing import Any
@@ -15,16 +14,8 @@ import httpx
 import torch
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-
-MODEL_PATH = os.getenv("MODEL_PATH", "/root/autodl-tmp/models/DeepSeek-R1-Distill-Qwen-7B")
-MODEL_NAME = os.getenv("MODEL_NAME", "deepseek-r1-distill-qwen-7b")
-MAX_CONTEXT = int(os.getenv("MAX_CONTEXT", "4096"))
-DEFAULT_MAX_TOKENS = int(os.getenv("DEFAULT_MAX_TOKENS", "512"))
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-RUNTIME_AGENT_API_KEY = os.getenv("RUNTIME_AGENT_API_KEY", DEEPSEEK_API_KEY)
+from pydantic import BaseModel
+RUNTIME_AGENT_API_KEY = os.getenv("RUNTIME_AGENT_API_KEY", "")
 DEFAULT_RUNTIME_ROOT = os.getenv(
     "CN_MODEL_HUB_RUNTIME_ROOT", "/root/autodl-tmp/cn-model-hub-runtimes"
 )
@@ -32,26 +23,10 @@ RUNTIME_LOG_LINES = 5000
 SKIP_TORCH_INSTALL = os.getenv("CN_MODEL_HUB_RUNTIME_SKIP_TORCH_INSTALL", "true").lower() == "true"
 
 
-app = FastAPI(title="DeepSeek API + cn_model_hub Runtime Agent", version="1.1.0")
-tokenizer = None
-model = None
+app = FastAPI(title="cn_model_hub Runtime Agent", version="1.2.0")
 runtimes: dict[str, dict[str, Any]] = {}
 active_runtime_key: str | None = None
 runtime_lock = asyncio.Lock()
-
-
-class ChatMessage(BaseModel):
-    role: str
-    content: str
-
-
-class ChatCompletionRequest(BaseModel):
-    model: str | None = None
-    messages: list[ChatMessage]
-    max_tokens: int | None = Field(default=None, ge=1, le=2048)
-    temperature: float | None = Field(default=0.6, ge=0.0, le=2.0)
-    top_p: float | None = Field(default=0.95, ge=0.0, le=1.0)
-    stream: bool | None = False
 
 
 class RuntimeStartRequest(BaseModel):
@@ -159,86 +134,19 @@ HOP_BY_HOP_HEADERS = {
 }
 
 
-def require_deepseek_api_key(authorization: str | None = Header(default=None)) -> None:
-    if DEEPSEEK_API_KEY and authorization != f"Bearer {DEEPSEEK_API_KEY}":
-        raise HTTPException(status_code=401, detail="invalid or missing API key")
-
-
 def require_runtime_api_key(authorization: str | None = Header(default=None)) -> None:
     if RUNTIME_AGENT_API_KEY and authorization != f"Bearer {RUNTIME_AGENT_API_KEY}":
         raise HTTPException(status_code=401, detail="invalid or missing runtime API key")
-
-
-@app.on_event("startup")
-def load_model() -> None:
-    global tokenizer, model
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True, trust_remote_code=True)
-    dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_PATH,
-        local_files_only=True,
-        trust_remote_code=True,
-        torch_dtype=dtype,
-        device_map="auto",
-        low_cpu_mem_usage=True,
-    )
-    model.eval()
 
 
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {
         "status": "ok",
-        "model": MODEL_NAME,
-        "model_path": MODEL_PATH,
         "cuda": torch.cuda.is_available(),
         "cuda_available": torch.cuda.is_available(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "active_runtime_key": active_runtime_key,
-    }
-
-
-@app.get("/v1/models", dependencies=[Depends(require_deepseek_api_key)])
-def models() -> dict[str, Any]:
-    return {"object": "list", "data": [{"id": MODEL_NAME, "object": "model", "owned_by": "local"}]}
-
-
-@app.post("/v1/chat/completions", dependencies=[Depends(require_deepseek_api_key)])
-def chat_completions(req: ChatCompletionRequest) -> dict[str, Any]:
-    if req.stream:
-        raise HTTPException(status_code=400, detail="stream=true is not implemented in this lightweight server")
-    if not req.messages:
-        raise HTTPException(status_code=400, detail="messages cannot be empty")
-    messages = [m.model_dump() for m in req.messages]
-    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=MAX_CONTEXT).to(model.device)
-    max_new_tokens = req.max_tokens or DEFAULT_MAX_TOKENS
-    do_sample = (req.temperature or 0) > 0
-    with torch.inference_mode():
-        generated = model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=do_sample,
-            temperature=req.temperature if do_sample else None,
-            top_p=req.top_p if do_sample else None,
-            pad_token_id=tokenizer.eos_token_id,
-            eos_token_id=tokenizer.eos_token_id,
-        )
-    output_ids = generated[0][inputs.input_ids.shape[-1]:]
-    content = tokenizer.decode(output_ids, skip_special_tokens=True).strip()
-    prompt_tokens = int(inputs.input_ids.shape[-1])
-    completion_tokens = int(output_ids.shape[-1])
-    return {
-        "id": "chatcmpl-" + uuid.uuid4().hex,
-        "object": "chat.completion",
-        "created": int(time.time()),
-        "model": req.model or MODEL_NAME,
-        "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
-        "usage": {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens,
-        },
     }
 
 
