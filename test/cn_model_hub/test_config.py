@@ -115,6 +115,7 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_LLM_API_KEY", "llm-key")
     monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL", "https://llm.example/v1")
     monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_LLM_MODEL", "qwen-test")
+    monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_MAX_KNOWLEDGE_CHUNKS", "7")
 
     cfg = hub_config.load_config()
     assert cfg.s3.public_endpoint == "http://env-s3-public"
@@ -163,6 +164,7 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     assert cfg.assistant.llm_api_key == "llm-key"
     assert cfg.assistant.llm_base_url == "https://llm.example/v1"
     assert cfg.assistant.llm_model == "qwen-test"
+    assert cfg.assistant.max_knowledge_chunks == 7
 
     hub_config.load_config.cache_clear()
 

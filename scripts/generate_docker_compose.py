@@ -391,9 +391,9 @@ def generate_hub_api_service(config: dict) -> str:
       - CN_MODEL_HUB_DEFAULT_ORG_PUBLIC_QUOTA_BYTES=100_000_000
 
       ## ===== Smart Assistant Configuration =====
-      - DEEPSEEK_API_KEY=${{DEEPSEEK_API_KEY:-}}
-      - CN_MODEL_HUB_ASSISTANT_LLM_MODEL=${{CN_MODEL_HUB_ASSISTANT_LLM_MODEL:-deepseek-v4-flash}}
-      - CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL=${{CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL:-https://api.deepseek.com}}
+      - CN_MODEL_HUB_ASSISTANT_LLM_API_KEY=${{CN_MODEL_HUB_ASSISTANT_LLM_API_KEY:-}}
+      - CN_MODEL_HUB_ASSISTANT_LLM_MODEL=${{CN_MODEL_HUB_ASSISTANT_LLM_MODEL:-qwen3.7-max}}
+      - CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL=${{CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}}
       - CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL=${{CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}}
       - CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED=${{CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED:-true}}{garage_config_section}
     volumes:
@@ -907,9 +907,9 @@ def migrate_existing_config(docker_compose_path: Path, config_toml_path: Path) -
                 "CN_MODEL_HUB_DATABASE_KEY": config["database_key"],
                 "LAKEFS_ENCRYPT_SECRET_KEY": config["lakefs_encrypt_key"],
                 "LAKEFS_BLOCKSTORE_S3_BUCKET": config["s3_bucket"],
-                "DEEPSEEK_API_KEY": "${DEEPSEEK_API_KEY:-}",
-                "CN_MODEL_HUB_ASSISTANT_LLM_MODEL": "${CN_MODEL_HUB_ASSISTANT_LLM_MODEL:-deepseek-v4-flash}",
-                "CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL": "${CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL:-https://api.deepseek.com}",
+                "CN_MODEL_HUB_ASSISTANT_LLM_API_KEY": "${CN_MODEL_HUB_ASSISTANT_LLM_API_KEY:-}",
+                "CN_MODEL_HUB_ASSISTANT_LLM_MODEL": "${CN_MODEL_HUB_ASSISTANT_LLM_MODEL:-qwen3.7-max}",
+                "CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL": "${CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}",
                 "CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL": "${CN_MODEL_HUB_ASSISTANT_EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}",
                 "CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED": "${CN_MODEL_HUB_ASSISTANT_EMBEDDING_ENABLED:-true}",
             },
