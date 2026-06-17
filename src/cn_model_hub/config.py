@@ -123,9 +123,10 @@ class SearchConfig(BaseModel):
 class AssistantConfig(BaseModel):
     """Smart assistant configuration."""
 
-    deepseek_api_key: str = ""
-    llm_base_url: str = "https://api.deepseek.com"
-    llm_model: str = "deepseek-chat"
+    llm_api_key: str = ""
+    llm_provider: str = "llm"
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_model: str = "gpt-4o-mini"
     llm_timeout_seconds: int = 30
     embedding_enabled: bool = True
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
@@ -500,12 +501,14 @@ def load_config(path: str = None) -> Config:
 
     # Assistant
     assistant_env = {}
-    if "CN_MODEL_HUB_ASSISTANT_DEEPSEEK_API_KEY" in os.environ:
-        assistant_env["deepseek_api_key"] = os.environ[
-            "CN_MODEL_HUB_ASSISTANT_DEEPSEEK_API_KEY"
+    if "CN_MODEL_HUB_ASSISTANT_LLM_API_KEY" in os.environ:
+        assistant_env["llm_api_key"] = os.environ[
+            "CN_MODEL_HUB_ASSISTANT_LLM_API_KEY"
         ]
-    elif "DEEPSEEK_API_KEY" in os.environ:
-        assistant_env["deepseek_api_key"] = os.environ["DEEPSEEK_API_KEY"]
+    if "CN_MODEL_HUB_ASSISTANT_LLM_PROVIDER" in os.environ:
+        assistant_env["llm_provider"] = os.environ[
+            "CN_MODEL_HUB_ASSISTANT_LLM_PROVIDER"
+        ]
     if "CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL" in os.environ:
         assistant_env["llm_base_url"] = os.environ[
             "CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL"

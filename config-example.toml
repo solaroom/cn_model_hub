@@ -93,9 +93,9 @@ meilisearch_url = "http://127.0.0.1:27700"
 meilisearch_api_key = "dev-meili-master-key"
 
 [assistant]
-deepseek_api_key = ""  # Prefer DEEPSEEK_API_KEY in shell; do not commit secrets.
-llm_base_url = "https://api.deepseek.com"
-llm_model = "deepseek-chat"
+llm_api_key = ""  # Assistant LLM API key; do not commit secrets.
+llm_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+llm_model = "qwen3.7-max"
 embedding_enabled = true
 embedding_model = "BAAI/bge-small-zh-v1.5"
 max_knowledge_chunks = 5

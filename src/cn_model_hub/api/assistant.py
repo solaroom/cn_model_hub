@@ -742,19 +742,19 @@ async def _run_repository_search(
     }
 
 
-async def _call_deepseek(
+async def _call_llm(
     question: str,
     intent: Intent,
     rag_sources: list[dict[str, Any]],
     search_results: list[dict[str, Any]],
     history: list[AssistantMessage],
 ) -> tuple[str | None, dict[str, Any]]:
-    api_key = cfg.assistant.deepseek_api_key
+    api_key = cfg.assistant.llm_api_key
     if not api_key:
         return None, {
             "provider": "fallback",
             "model": cfg.assistant.llm_model,
-            "error": "DEEPSEEK_API_KEY 未配置",
+            "error": "助手 LLM API Key 未配置",
         }
 
     source_text = "\n\n".join(
@@ -792,7 +792,8 @@ async def _call_deepseek(
             ),
         }
     )
-    url = f"{cfg.assistant.llm_base_url.rstrip('/')}/chat/completions"
+    base_url = cfg.assistant.llm_base_url
+    url = f"{base_url.rstrip('/')}/chat/completions"
     payload = {
         "model": cfg.assistant.llm_model,
         "messages": messages,
@@ -813,12 +814,15 @@ async def _call_deepseek(
         data = response.json()
         answer = data["choices"][0]["message"]["content"]
         return answer, {
-            "provider": "deepseek",
+            "provider": cfg.assistant.llm_provider,
             "model": cfg.assistant.llm_model,
-            "base_url": cfg.assistant.llm_base_url,
+            "base_url": base_url,
         }
     except Exception as exc:
-        logger.warning(f"DeepSeek assistant call failed: {type(exc).__name__}: {exc}")
+        logger.warning(
+            f"Assistant LLM call failed: "
+            f"{type(exc).__name__}: {exc}"
+        )
         return None, {
             "provider": "fallback",
             "model": cfg.assistant.llm_model,
@@ -908,9 +912,9 @@ def _fallback_answer(
 async def assistant_status():
     chunks = _knowledge_index.chunks()
     return {
-        "llm_provider": "deepseek",
+        "llm_provider": cfg.assistant.llm_provider,
         "llm_model": cfg.assistant.llm_model,
-        "llm_configured": bool(cfg.assistant.deepseek_api_key),
+        "llm_configured": bool(cfg.assistant.llm_api_key),
         "embedding_model": cfg.assistant.embedding_model,
         "embedding_enabled": cfg.assistant.embedding_enabled,
         "knowledge_directory": _KNOWLEDGE_DIR.as_posix(),
@@ -952,7 +956,7 @@ async def assistant_chat(
             question, filters, user, payload.limit
         )
 
-    llm_answer, llm_state = await _call_deepseek(
+    llm_answer, llm_state = await _call_llm(
         question,
         intent,
         sources,

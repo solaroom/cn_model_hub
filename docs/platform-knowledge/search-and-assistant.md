@@ -24,5 +24,4 @@
 
 ## 模型配置
 
-RAG embedding 模型配置为 `BAAI/bge-small-zh-v1.5`。大模型整理默认使用 DeepSeek API，密钥通过环境变量 `DEEPSEEK_API_KEY` 或 `CN_MODEL_HUB_ASSISTANT_DEEPSEEK_API_KEY` 注入，不写入仓库。
-
+RAG embedding 模型配置为 `BAAI/bge-small-zh-v1.5`。大模型整理使用配置的 LLM；密钥通过环境变量 `CN_MODEL_HUB_ASSISTANT_LLM_API_KEY` 注入，不写入仓库。

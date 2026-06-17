@@ -110,15 +110,16 @@ curl -X POST http://127.0.0.1:48888/api/assistant/chat \
    -> 平台知识问答：检索 docs/platform-knowledge
    -> 找模型/数据集：调用现有搜索接口
    -> 两者都有：搜索接口 + RAG
--> DeepSeek 整理结果
+-> 大模型整理结果
 -> 返回答案、来源和真实平台链接
 ```
 
-RAG embedding 模型配置为 `BAAI/bge-small-zh-v1.5`。DeepSeek API Key 不写入仓库，请通过环境变量注入：
+RAG embedding 模型配置为 `BAAI/bge-small-zh-v1.5`。助手调用 LLM 整理答案；API Key 不写入仓库，请通过环境变量注入。下面示例使用 DashScope 千问：
 
 ```bash
-export DEEPSEEK_API_KEY="你的 DeepSeek API Key"
-export CN_MODEL_HUB_ASSISTANT_LLM_MODEL=deepseek-chat
+export CN_MODEL_HUB_ASSISTANT_LLM_API_KEY="你的 DashScope API Key"
+export CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export CN_MODEL_HUB_ASSISTANT_LLM_MODEL=qwen3.7-max
 docker compose up -d --force-recreate hub-api
 ```
 

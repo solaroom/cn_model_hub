@@ -32,14 +32,15 @@ docker compose up -d --build hub-api hub-ui
 - 密码：`CnModelHub123!`
 - 管理后台令牌：`dev-admin-token-change-me`
 
-## DeepSeek 配置
+## 大模型配置
 
-不要把 DeepSeek API Key 写入代码或 README。推荐在本机 shell 或 `.env.dev` 中配置：
+不要把大模型 API Key 写入代码或 README。智能助手调用 LLM 整理答案，推荐在本机 shell 或 `.env.dev` 中配置。下面示例使用 DashScope 千问：
 
 ```bash
-export DEEPSEEK_API_KEY="你的 DeepSeek API Key"
+export CN_MODEL_HUB_ASSISTANT_LLM_API_KEY="你的 DashScope API Key"
+export CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export CN_MODEL_HUB_ASSISTANT_LLM_MODEL=qwen3.7-max
 docker compose up -d --force-recreate hub-api
 ```
 
-配置后，智能助手会调用 DeepSeek 进行最终答案整理；未配置时，平台会用本地检索结果生成兜底回答。
-
+配置后，智能助手会调用配置的大模型进行最终答案整理；未配置时，平台会用本地检索结果生成兜底回答。

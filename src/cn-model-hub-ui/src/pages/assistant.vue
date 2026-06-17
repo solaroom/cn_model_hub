@@ -232,7 +232,7 @@ const messages = ref([
 ]);
 
 const statusLine = computed(() => {
-  if (!status.value) return "DeepSeek · BGE RAG · 平台搜索";
+  if (!status.value) return "大模型 · BGE RAG · 平台搜索";
   const llm = status.value.llm_configured ? status.value.llm_model : "未配置 API Key";
   return `${llm} · ${status.value.embedding_model}`;
 });

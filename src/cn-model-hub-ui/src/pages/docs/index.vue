@@ -32,7 +32,7 @@ const knowledgeDocs = [
   },
   {
     title: "搜索和智能助手",
-    description: "Meilisearch、RAG 知识库和 DeepSeek 整理链路。",
+    description: "Meilisearch、RAG 知识库和大模型整理链路。",
     path: "/docs/platform-knowledge/search-and-assistant",
     icon: "i-carbon-ai-results",
   },

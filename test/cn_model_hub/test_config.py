@@ -115,6 +115,9 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     monkeypatch.setenv("CN_MODEL_HUB_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("CN_MODEL_HUB_LOG_FORMAT", "terminal")
     monkeypatch.setenv("CN_MODEL_HUB_LOG_DIR", "/tmp/logs")
+    monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_LLM_API_KEY", "llm-key")
+    monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL", "https://llm.example/v1")
+    monkeypatch.setenv("CN_MODEL_HUB_ASSISTANT_LLM_MODEL", "qwen-test")
 
     cfg = hub_config.load_config()
     assert cfg.s3.public_endpoint == "http://env-s3-public"
@@ -162,7 +165,35 @@ def test_load_config_merges_file_and_environment(monkeypatch):
     assert cfg.app.log_level == "DEBUG"
     assert cfg.app.log_format == "terminal"
     assert cfg.app.log_dir == "/tmp/logs"
+    assert cfg.assistant.llm_api_key == "llm-key"
+    assert cfg.assistant.llm_base_url == "https://llm.example/v1"
+    assert cfg.assistant.llm_model == "qwen-test"
 
+    hub_config.load_config.cache_clear()
+
+
+def test_load_config_accepts_llm_assistant_fields(monkeypatch):
+    hub_config.load_config.cache_clear()
+    monkeypatch.setattr(hub_config.os.path, "exists", lambda _path: True)
+
+    data = (
+        b"[assistant]\n"
+        b'llm_api_key = "file-key"\n'
+        b'llm_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"\n'
+        b'llm_model = "qwen3.7-max"\n'
+    )
+
+    @contextmanager
+    def _open_config(_path, _mode):
+        yield io.BytesIO(data)
+
+    monkeypatch.setattr(hub_config, "open", _open_config, raising=False)
+
+    cfg = hub_config.load_config(path="assistant.toml")
+    assert cfg.assistant.llm_api_key == "file-key"
+    assert cfg.assistant.llm_base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    assert cfg.assistant.llm_provider == "llm"
+    assert cfg.assistant.llm_model == "qwen3.7-max"
     hub_config.load_config.cache_clear()
 
 
