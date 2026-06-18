@@ -533,7 +533,7 @@ Repository updated, but failed to stop remote runtime: ...
 
 - 校验 bearer token。
 - 维护内存中的 runtime 状态。
-- 检查 GPU 是否忙。
+- 为每个 runtime 独立分配端口和进程，允许多个模型同时运行。
 - 创建/复用 venv。
 - 安装依赖。
 - 启动 `app.py`。
@@ -556,12 +556,12 @@ runtimes = {
     }
 }
 
-active_runtime_key = None
+runtime_locks = {}  # 每个 runtime 独立加锁，互不阻塞
 ```
 
 启动前检查：
 
-- 是否已有其他 runtime running。
+- 相同 runtime 是否已经 running（不同 runtime 可并行运行）。
 - `nvidia-smi` 是否可用。
 - CUDA 是否可用。
 - 远程目录 `.commit` 是否匹配。

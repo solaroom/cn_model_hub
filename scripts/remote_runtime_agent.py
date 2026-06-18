@@ -23,10 +23,9 @@ RUNTIME_LOG_LINES = 5000
 SKIP_TORCH_INSTALL = os.getenv("CN_MODEL_HUB_RUNTIME_SKIP_TORCH_INSTALL", "true").lower() == "true"
 
 
-app = FastAPI(title="cn_model_hub Runtime Agent", version="1.2.0")
+app = FastAPI(title="cn_model_hub Runtime Agent", version="1.3.0")
 runtimes: dict[str, dict[str, Any]] = {}
-active_runtime_key: str | None = None
-runtime_lock = asyncio.Lock()
+runtime_locks: dict[str, asyncio.Lock] = {}
 
 
 class RuntimeStartRequest(BaseModel):
@@ -141,12 +140,14 @@ def require_runtime_api_key(authorization: str | None = Header(default=None)) ->
 
 @app.get("/health")
 def health() -> dict[str, Any]:
+    active_keys = active_runtime_keys()
     return {
         "status": "ok",
         "cuda": torch.cuda.is_available(),
         "cuda_available": torch.cuda.is_available(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
-        "active_runtime_key": active_runtime_key,
+        "active_runtime_keys": active_keys,
+        "active_runtime_count": len(active_keys),
     }
 
 
@@ -154,8 +155,23 @@ def runtime_dir(runtime_key: str, root: str | None = None) -> Path:
     return Path(root or DEFAULT_RUNTIME_ROOT).expanduser().resolve() / runtime_key
 
 
+def active_runtime_keys() -> list[str]:
+    """Return every runtime whose child process is still alive."""
+    return sorted(
+        runtime_key
+        for runtime_key, state in runtimes.items()
+        if (proc := state.get("process")) is not None and proc.returncode is None
+    )
+
+
+def runtime_lock(runtime_key: str) -> asyncio.Lock:
+    """Serialize operations for one runtime without blocking other models."""
+    return runtime_locks.setdefault(runtime_key, asyncio.Lock())
+
+
 def public_runtime_status(runtime_key: str) -> dict[str, Any]:
     state = runtimes.get(runtime_key)
+    active_keys = active_runtime_keys()
     root = runtime_dir(runtime_key)
     commit_file = root / ".commit"
     commit_id = commit_file.read_text(encoding="utf-8").strip() if commit_file.exists() else ""
@@ -166,7 +182,8 @@ def public_runtime_status(runtime_key: str) -> dict[str, Any]:
             "commit_id": commit_id,
             "message": "Runtime is stopped.",
             "logs": [],
-            "active_runtime_key": active_runtime_key,
+            "active_runtime_keys": active_keys,
+            "active_runtime_count": len(active_keys),
         }
     proc = state.get("process")
     if state.get("status") == "running" and proc and proc.returncode is not None:
@@ -183,7 +200,8 @@ def public_runtime_status(runtime_key: str) -> dict[str, Any]:
         "message": state.get("message", ""),
         "logs": list(state.get("logs") or []),
         "log_limit": RUNTIME_LOG_LINES,
-        "active_runtime_key": active_runtime_key,
+        "active_runtime_keys": active_keys,
+        "active_runtime_count": len(active_keys),
         "cuda_available": torch.cuda.is_available(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
     }
@@ -216,7 +234,15 @@ async def read_process_output(state: dict[str, Any]) -> None:
 
 
 def free_port() -> int:
+    reserved_ports = {
+        state.get("port")
+        for state in runtimes.values()
+        if state.get("port")
+        and state.get("status") in {"starting", "running"}
+    }
     for port in range(7861, 7900):
+        if port in reserved_ports:
+            continue
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             try:
                 sock.bind(("127.0.0.1", port))
@@ -311,21 +337,20 @@ async def wait_for_http(state: dict[str, Any], timeout: float = 60.0) -> None:
 
 
 async def stop_runtime_process(runtime_key: str, reason: str) -> dict[str, Any]:
-    global active_runtime_key
-    state = runtimes.get(runtime_key)
-    if state:
-        proc = state.get("process")
-        if proc and proc.returncode is None:
-            proc.terminate()
-            try:
-                await asyncio.wait_for(proc.wait(), timeout=10)
-            except asyncio.TimeoutError:
-                proc.kill()
-        state["status"] = "stopped"
-        state["message"] = f"Runtime stopped: {reason}."
-    if active_runtime_key == runtime_key:
-        active_runtime_key = None
-    return public_runtime_status(runtime_key)
+    async with runtime_lock(runtime_key):
+        state = runtimes.get(runtime_key)
+        if state:
+            proc = state.get("process")
+            if proc and proc.returncode is None:
+                proc.terminate()
+                try:
+                    await asyncio.wait_for(proc.wait(), timeout=10)
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await proc.wait()
+            state["status"] = "stopped"
+            state["message"] = f"Runtime stopped: {reason}."
+        return public_runtime_status(runtime_key)
 
 
 @app.get("/api/runtime/status/{runtime_key}", dependencies=[Depends(require_runtime_api_key)])
@@ -340,14 +365,7 @@ async def runtime_stop(req: RuntimeStopRequest) -> dict[str, Any]:
 
 @app.post("/api/runtime/start", dependencies=[Depends(require_runtime_api_key)])
 async def runtime_start(req: RuntimeStartRequest) -> dict[str, Any]:
-    global active_runtime_key
-    async with runtime_lock:
-        if active_runtime_key and active_runtime_key != req.runtime_key:
-            return {
-                "status": "busy",
-                "message": f"GPU is busy. Current runtime: {active_runtime_key}",
-                "active_runtime_key": active_runtime_key,
-            }
+    async with runtime_lock(req.runtime_key):
         state = runtimes.get(req.runtime_key)
         proc = state.get("process") if state else None
         if proc and proc.returncode is None and state.get("commit_id") == req.commit_id:
@@ -418,18 +436,13 @@ async def runtime_start(req: RuntimeStartRequest) -> dict[str, Any]:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )
-            active_runtime_key = req.runtime_key
             asyncio.create_task(read_process_output(state))
             await wait_for_http(state)
-            if state.get("status") == "error":
-                active_runtime_key = None
             return public_runtime_status(req.runtime_key)
         except Exception as exc:
             state["status"] = "error"
             state["message"] = str(exc)
             append_log(state, f"Runtime start failed: {exc}")
-            if active_runtime_key == req.runtime_key:
-                active_runtime_key = None
             return public_runtime_status(req.runtime_key)
 
 

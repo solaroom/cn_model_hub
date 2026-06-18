@@ -381,6 +381,7 @@ def _public_remote_status(repo: Repository, data: dict | None) -> dict:
             "logs": [],
         }
     status = data.get("status") or "stopped"
+    active_runtime_keys = data.get("active_runtime_keys") or []
     return {
         "status": status,
         "message": data.get("message") or "",
@@ -395,7 +396,8 @@ def _public_remote_status(repo: Repository, data: dict | None) -> dict:
         ),
         "logs": data.get("logs") or [],
         "log_limit": data.get("log_limit") or RUNTIME_LOG_LINES,
-        "active_runtime_key": data.get("active_runtime_key"),
+        "active_runtime_keys": active_runtime_keys,
+        "active_runtime_count": len(active_runtime_keys),
         "gpu": data.get("gpu"),
         "cuda_available": data.get("cuda_available"),
     }
