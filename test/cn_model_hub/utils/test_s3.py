@@ -47,21 +47,24 @@ def test_get_presigned_url_process_pool_is_cached(monkeypatch):
     assert registrations == [pool1.shutdown]
 
 
-def test_generate_single_part_url_builds_client_and_rewrites_public_endpoint(monkeypatch):
+def test_generate_single_part_url_signs_with_public_endpoint(monkeypatch):
     captured = {}
 
     class RecordingClient:
+        def __init__(self, endpoint_url):
+            self.endpoint_url = endpoint_url
+
         def generate_presigned_url(self, operation_name, Params, ExpiresIn):
             captured["operation_name"] = operation_name
             captured["params"] = Params
             captured["expires_in"] = ExpiresIn
-            return "https://internal-s3.local/bucket/object.bin?upload=1"
+            return f"{self.endpoint_url}/bucket/object.bin?upload=1"
 
     monkeypatch.setattr(s3_module, "BotoConfig", lambda **kwargs: kwargs)
 
     def fake_boto3_client(service_name, **kwargs):
         captured["client_kwargs"] = kwargs
-        return RecordingClient()
+        return RecordingClient(kwargs["endpoint_url"])
 
     monkeypatch.setattr(s3_module.boto3, "client", fake_boto3_client)
 
@@ -282,8 +285,14 @@ async def test_async_s3_wrappers_use_shared_executor(monkeypatch, wrapper_name, 
 
 def test_generate_multipart_upload_urls_supports_sequential_and_parallel_modes(monkeypatch):
     service = FakeS3Service()
-    
+
+    presign_endpoints = []
+
     class RecordingMultipartClient(FakeS3Client):
+        def __init__(self, service, endpoint_url="https://internal-s3.local"):
+            super().__init__(service)
+            self.endpoint_url = endpoint_url
+
         def generate_presigned_url(
             self,
             operation_name: str,
@@ -292,7 +301,7 @@ def test_generate_multipart_upload_urls_supports_sequential_and_parallel_modes(m
             HttpMethod: str | None = None,
         ) -> str:
             if operation_name == "upload_part":
-                return f"https://internal-s3.local/{Params['Bucket']}/{Params['Key']}?part={Params['PartNumber']}"
+                return f"{self.endpoint_url}/{Params['Bucket']}/{Params['Key']}?part={Params['PartNumber']}"
             return super().generate_presigned_url(
                 operation_name,
                 Params=Params,
@@ -303,11 +312,18 @@ def test_generate_multipart_upload_urls_supports_sequential_and_parallel_modes(m
     client = RecordingMultipartClient(service)
     monkeypatch.setattr(s3_module, "get_s3_client", lambda: client)
 
+    def fake_boto_client(*args, **kwargs):
+        presign_endpoints.append(kwargs["endpoint_url"])
+        return RecordingMultipartClient(service, kwargs["endpoint_url"])
+
+    monkeypatch.setattr(s3_module.boto3, "client", fake_boto_client)
+
     sequential = s3_module._generate_multipart_upload_urls_sync("bucket", "big.bin", 2, expires_in=120)
 
     assert sequential["upload_id"]
     assert [item["part_number"] for item in sequential["part_urls"]] == [1, 2]
     assert all(url["url"].startswith("https://public-s3.local/") for url in sequential["part_urls"])
+    assert presign_endpoints == ["https://public-s3.local"] * 2
     assert datetime.fromisoformat(sequential["expires_at"].replace("Z", "+00:00"))
 
     @dataclass
@@ -336,6 +352,7 @@ def test_generate_multipart_upload_urls_supports_sequential_and_parallel_modes(m
     assert len(parallel["part_urls"]) == 11
     assert fake_pool.args_list is not None
     assert fake_pool.args_list[0][:4] == ("bucket", "huge.bin", "existing-upload", 1)
+    assert fake_pool.args_list[0][5]["public_endpoint"] == "https://public-s3.local"
 
 
 def test_complete_abort_metadata_and_exists_helpers(monkeypatch):

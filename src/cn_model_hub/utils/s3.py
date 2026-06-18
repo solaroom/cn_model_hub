@@ -41,10 +41,16 @@ def _generate_single_part_url(args: tuple) -> dict:
     """
     bucket, key, upload_id, part_number, expires_in, s3_config = args
 
+    # Presigned URLs must be signed with the same host that the browser will
+    # contact. SigV4 includes the Host header in the signature, so signing
+    # against the internal endpoint and replacing the host afterwards makes
+    # every upload-part request fail with SignatureDoesNotMatch.
+    presign_endpoint = s3_config.get("public_endpoint") or s3_config["endpoint"]
+
     # Create S3 client (must be done in each process)
     s3 = boto3.client(
         "s3",
-        endpoint_url=s3_config["endpoint"],
+        endpoint_url=presign_endpoint,
         aws_access_key_id=s3_config["access_key"],
         aws_secret_access_key=s3_config["secret_key"],
         region_name=s3_config.get("region", "us-east-1"),
@@ -69,10 +75,6 @@ def _generate_single_part_url(args: tuple) -> dict:
         },
         ExpiresIn=expires_in,
     )
-
-    # Replace endpoint if needed
-    if s3_config.get("public_endpoint") != s3_config.get("endpoint"):
-        url = url.replace(s3_config["endpoint"], s3_config["public_endpoint"])
 
     return {"part_number": part_number, "url": url}
 
@@ -377,24 +379,19 @@ def _generate_multipart_upload_urls_sync(
         logger.success(f"Generated {part_count} presigned URLs in parallel")
     else:
         # For small part counts, use sequential generation (faster due to no overhead)
-        part_urls = []
-        for part_number in range(1, part_count + 1):
-            url = s3.generate_presigned_url(
-                "upload_part",
-                Params={
-                    "Bucket": bucket,
-                    "Key": key,
-                    "UploadId": upload_id,
-                    "PartNumber": part_number,
-                },
-                ExpiresIn=expires_in,
+        part_urls = [
+            _generate_single_part_url(
+                (
+                    bucket,
+                    key,
+                    upload_id,
+                    part_number,
+                    expires_in,
+                    s3_config,
+                )
             )
-            part_urls.append(
-                {
-                    "part_number": part_number,
-                    "url": url.replace(cfg.s3.endpoint, cfg.s3.public_endpoint),
-                }
-            )
+            for part_number in range(1, part_count + 1)
+        ]
 
     expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).strftime(
         "%Y-%m-%dT%H:%M:%S.%fZ"
