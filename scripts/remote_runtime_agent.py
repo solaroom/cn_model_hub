@@ -148,6 +148,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 MODEL_PATH = Path(os.getenv("LOCAL_MODEL_PATH", ".")).resolve()
+MODEL_NAME = os.getenv("CN_MODEL_HUB_MODEL_NAME", MODEL_PATH.name)
 MAX_NEW_TOKENS = int(os.getenv("MAX_NEW_TOKENS", "128"))
 _tokenizer = None
 _model = None
@@ -199,7 +200,7 @@ def chat(message, history):
         return f"远程模型启动或推理失败。\n\n模型目录：{MODEL_PATH}\n\n错误：{exc}"
 
 
-demo = gr.ChatInterface(fn=chat, title="远程 GPU 模型 Demo", type="messages")
+demo = gr.ChatInterface(fn=chat, title=MODEL_NAME, type="messages")
 
 if __name__ == "__main__":
     demo.launch(
@@ -621,6 +622,7 @@ async def runtime_start(req: RuntimeStartRequest) -> dict[str, Any]:
                     "GRADIO_SERVER_PORT": str(port),
                     "GRADIO_ROOT_PATH": f"/api/runtime/proxy/{req.runtime_key}",
                     "LOCAL_MODEL_PATH": str(current),
+                    "CN_MODEL_HUB_MODEL_NAME": req.repo_id,
                     "PYTHONUNBUFFERED": "1",
                 }
             )
