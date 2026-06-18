@@ -18,6 +18,7 @@ from pathlib import Path
 import shutil
 import socket
 import sys
+import time
 from urllib.parse import quote, urljoin
 
 import httpx
@@ -226,6 +227,8 @@ _runtimes: dict[str, RuntimeState] = {}
 _locks: dict[str, asyncio.Lock] = {}
 _remote_statuses: dict[str, dict] = {}
 
+REMOTE_LOCAL_PHASES = {"syncing", "packaging", "uploading", "launching"}
+
 
 def _runtime_key(repo_type: str, namespace: str, name: str) -> str:
     return f"{repo_type}:{namespace}/{name}"
@@ -400,7 +403,21 @@ def _public_remote_status(repo: Repository, data: dict | None) -> dict:
         "active_runtime_count": len(active_runtime_keys),
         "gpu": data.get("gpu"),
         "cuda_available": data.get("cuda_available"),
+        "phase": data.get("phase") or "",
+        "transferred_bytes": data.get("transferred_bytes") or 0,
+        "total_bytes": data.get("total_bytes") or 0,
+        "progress_percent": data.get("progress_percent"),
+        "transfer_rate_bytes": data.get("transfer_rate_bytes") or 0,
+        "eta_seconds": data.get("eta_seconds"),
     }
+
+
+def _remote_operation_active(data: dict | None) -> bool:
+    return bool(
+        data
+        and data.get("status") == "starting"
+        and data.get("phase") in REMOTE_LOCAL_PHASES
+    )
 
 
 def _demo_label(repo_type: str) -> str:
@@ -548,7 +565,9 @@ async def _run_upload_command(command: list[str]) -> None:
         raise RuntimeError(f"{command[0]} failed with code {proc.returncode}: {text}")
 
 
-async def _stream_file_to_remote(command: list[str], package_path: Path) -> None:
+async def _stream_file_to_remote(
+    command: list[str], package_path: Path, progress: dict | None = None
+) -> None:
     proc = await asyncio.create_subprocess_exec(
         *command,
         stdin=asyncio.subprocess.PIPE,
@@ -556,6 +575,19 @@ async def _stream_file_to_remote(command: list[str], package_path: Path) -> None
         stderr=asyncio.subprocess.STDOUT,
     )
     assert proc.stdin is not None
+    total_bytes = package_path.stat().st_size
+    transferred_bytes = 0
+    started_at = time.monotonic()
+    if progress is not None:
+        progress.update(
+            phase="uploading",
+            message="正在上传模型到 GPU 服务器…",
+            transferred_bytes=0,
+            total_bytes=total_bytes,
+            progress_percent=0.0,
+            transfer_rate_bytes=0,
+            eta_seconds=None,
+        )
     with package_path.open("rb") as fh:
         while True:
             chunk = fh.read(1024 * 1024)
@@ -563,6 +595,19 @@ async def _stream_file_to_remote(command: list[str], package_path: Path) -> None
                 break
             proc.stdin.write(chunk)
             await proc.stdin.drain()
+            transferred_bytes += len(chunk)
+            elapsed = max(time.monotonic() - started_at, 0.001)
+            rate = transferred_bytes / elapsed
+            if progress is not None:
+                remaining = max(total_bytes - transferred_bytes, 0)
+                progress.update(
+                    transferred_bytes=transferred_bytes,
+                    progress_percent=round(transferred_bytes * 100 / total_bytes, 1)
+                    if total_bytes
+                    else 100.0,
+                    transfer_rate_bytes=round(rate),
+                    eta_seconds=round(remaining / rate) if rate else None,
+                )
     proc.stdin.close()
     output = await proc.communicate()
     if proc.returncode != 0:
@@ -570,7 +615,9 @@ async def _stream_file_to_remote(command: list[str], package_path: Path) -> None
         raise RuntimeError(f"{command[0]} upload failed with code {proc.returncode}: {text}")
 
 
-async def _upload_runtime_package(remote_key: str, package_path: Path) -> None:
+async def _upload_runtime_package(
+    remote_key: str, package_path: Path, progress: dict | None = None
+) -> None:
     if cfg.app.space_runtime_remote_upload_method.lower() != "ssh":
         raise RuntimeError("Only ssh remote runtime upload is supported.")
     ssh_alias = cfg.app.space_runtime_remote_ssh_alias
@@ -579,6 +626,7 @@ async def _upload_runtime_package(remote_key: str, package_path: Path) -> None:
     await _stream_file_to_remote(
         ["ssh", ssh_alias, f"cat > {remote_dir}/source.tar.gz"],
         package_path,
+        progress,
     )
 
 
@@ -659,7 +707,16 @@ async def _start_remote_runtime(
     remote_key = _remote_runtime_key(repo.repo_type, repo.namespace, repo.name)
     lock = _locks.setdefault(key, asyncio.Lock())
     async with lock:
+        progress = {
+            "status": "starting",
+            "phase": "syncing",
+            "message": "正在从模型仓库同步文件…",
+            "revision": revision,
+            "logs": [],
+        }
+        _remote_statuses[key] = progress
         workdir, commit_id = await _materialize_repo(repo, revision)
+        progress.update(commit_id=commit_id, phase="packaging", message="正在打包模型文件…")
         using_builtin_model_app = repo.repo_type == "model" and not (workdir / "app.py").exists()
         remote_status = await _remote_agent_get_status(remote_key)
         if (
@@ -676,13 +733,19 @@ async def _start_remote_runtime(
                 logger.warning(f"Failed to stop stale remote runtime {remote_key}: {exc}")
             package_path = _create_runtime_tar(workdir)
             try:
-                await _upload_runtime_package(remote_key, package_path)
+                await _upload_runtime_package(remote_key, package_path, progress)
             finally:
                 try:
                     package_path.unlink(missing_ok=True)
                 except Exception:
                     pass
 
+        progress.update(
+            phase="launching",
+            message="模型上传完成，正在 GPU 服务器上启动运行时…",
+            progress_percent=100.0,
+            eta_seconds=0,
+        )
         started = await _remote_agent_start(
             repo,
             remote_key,
@@ -953,6 +1016,9 @@ async def get_runtime_status(
     if _remote_enabled():
         key = _runtime_key(repo_type, namespace, name)
         remote_key = _remote_runtime_key(repo_type, namespace, name)
+        cached = _remote_statuses.get(key)
+        if _remote_operation_active(cached):
+            return _public_remote_status(repo, cached)
         try:
             data = await _remote_agent_get_status(remote_key)
             _remote_statuses[key] = data
@@ -1019,6 +1085,16 @@ async def start_runtime(
         raise
     except Exception as exc:
         logger.exception(f"Failed to start {repo_type} runtime {namespace}/{name}", exc)
+        if _remote_enabled():
+            key = _runtime_key(repo_type, namespace, name)
+            previous = _remote_statuses.get(key) or {}
+            _remote_statuses[key] = {
+                **previous,
+                "status": "error",
+                "phase": "error",
+                "message": str(exc),
+            }
+            return _public_remote_status(repo, _remote_statuses[key])
         state = _runtimes.get(_runtime_key(repo_type, namespace, name))
         if state:
             return _public_status(state)

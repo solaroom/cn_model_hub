@@ -1,19 +1,21 @@
 <template>
   <div class="space-y-4">
     <div class="card">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h2 class="text-xl font-semibold">{{ runtimeTitle }}</h2>
-          <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div
+            class="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
+          >
             <el-tag :type="statusTagType" effect="plain">
               {{ statusLabel }}
             </el-tag>
             <span v-if="runtime.commit_id" class="font-mono text-xs">
               {{ runtime.commit_id.slice(0, 7) }}
             </span>
-            <span v-if="mlflow.enabled">
-              MLflow: {{ mlflow.status }}
-            </span>
+            <span v-if="mlflow.enabled"> MLflow: {{ mlflow.status }} </span>
           </div>
         </div>
 
@@ -49,9 +51,56 @@
       >
         {{ runtime.message }}
       </p>
+
+      <div
+        v-if="showTransferProgress"
+        class="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/40"
+      >
+        <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+          <span class="font-medium text-blue-900 dark:text-blue-200">
+            {{ phaseLabel }}
+          </span>
+          <span
+            v-if="hasMeasuredProgress"
+            class="tabular-nums text-blue-700 dark:text-blue-300"
+          >
+            {{ formatBytes(runtime.transferred_bytes) }} /
+            {{ formatBytes(runtime.total_bytes) }}
+          </span>
+        </div>
+        <el-progress
+          v-if="hasMeasuredProgress"
+          :percentage="Math.min(100, Number(runtime.progress_percent || 0))"
+          :stroke-width="12"
+        />
+        <el-progress
+          v-else
+          :percentage="100"
+          :indeterminate="true"
+          :show-text="false"
+          :stroke-width="12"
+        />
+        <div
+          v-if="hasMeasuredProgress"
+          class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-blue-700 dark:text-blue-300"
+        >
+          <span v-if="runtime.transfer_rate_bytes">
+            速度 {{ formatBytes(runtime.transfer_rate_bytes) }}/s
+          </span>
+          <span
+            v-if="runtime.eta_seconds != null && runtime.phase === 'uploading'"
+          >
+            预计剩余 {{ formatDuration(runtime.eta_seconds) }}
+          </span>
+          <span>请保持服务运行，离开此页面不会中断上传</span>
+        </div>
+      </div>
     </div>
 
-    <div v-if="runtime.status === 'running' && runtime.proxy_url" class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+    <div
+      v-if="runtime.status === 'running' && runtime.proxy_url"
+      class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+    >
       <iframe
         :key="runtime.proxy_url"
         :src="runtime.proxy_url"
@@ -61,20 +110,21 @@
       />
     </div>
 
-    <div
-      v-else
-      class="card py-14 text-center text-gray-500 dark:text-gray-400"
-    >
+    <div v-else class="card py-14 text-center text-gray-500 dark:text-gray-400">
       <div class="i-carbon-application-web mb-4 inline-block text-6xl" />
       <p v-if="isOwner">{{ ownerEmptyText }}</p>
       <p v-else>{{ visitorEmptyText }}</p>
     </div>
 
     <div v-if="runtime.logs?.length" class="card">
-      <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div class="flex flex-wrap items-center gap-2">
           <h3 class="font-semibold">运行日志</h3>
-          <el-tag size="small" effect="plain">{{ runtime.logs.length }} 行</el-tag>
+          <el-tag size="small" effect="plain"
+            >{{ runtime.logs.length }} 行</el-tag
+          >
           <el-tag v-if="runtime.log_limit" size="small" effect="plain">
             最多保留 {{ runtime.log_limit }} 行
           </el-tag>
@@ -93,7 +143,8 @@
       <pre
         ref="logRef"
         class="max-h-[70vh] min-h-[24rem] overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950 p-4 font-mono text-xs leading-5 text-gray-100"
-      >{{ logText }}</pre>
+        >{{ logText }}</pre
+      >
     </div>
   </div>
 </template>
@@ -160,6 +211,49 @@ const visitorEmptyText = computed(() =>
 );
 
 const logText = computed(() => (runtime.value.logs || []).join("\n"));
+
+const showTransferProgress = computed(
+  () =>
+    runtime.value.status === "starting" &&
+    ["syncing", "packaging", "uploading", "launching"].includes(
+      runtime.value.phase,
+    ),
+);
+
+const hasMeasuredProgress = computed(
+  () =>
+    runtime.value.phase === "uploading" &&
+    Number(runtime.value.total_bytes) > 0,
+);
+
+const phaseLabel = computed(
+  () =>
+    ({
+      syncing: "1/4 同步仓库文件",
+      packaging: "2/4 打包模型文件",
+      uploading: "3/4 上传模型到 GPU 服务器",
+      launching: "4/4 启动远程运行时",
+    })[runtime.value.phase] || "准备运行时",
+);
+
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const index = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1,
+  );
+  return `${(bytes / 1024 ** index).toFixed(index >= 3 ? 2 : 1)} ${units[index]}`;
+}
+
+function formatDuration(value) {
+  const seconds = Math.max(0, Math.round(Number(value || 0)));
+  if (seconds < 60) return `${seconds} 秒`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return rest ? `${minutes} 分 ${rest} 秒` : `${minutes} 分`;
+}
 
 const shouldPollRuntime = computed(() =>
   ["starting", "running"].includes(runtime.value.status),
