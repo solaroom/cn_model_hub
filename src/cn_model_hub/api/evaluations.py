@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -15,8 +16,14 @@ from cn_model_hub.api.repo.utils.hf import hf_repo_not_found
 from cn_model_hub.api.space_runtime import (
     BUILTIN_QWEN_LOCAL_REQUIREMENTS,
     PYTORCH_CPU_INDEX_URL,
+    _create_runtime_tar,
     _materialize_repo,
+    _remote_agent_url,
+    _remote_enabled,
+    _remote_headers,
+    _remote_runtime_key,
     _runtime_root,
+    _upload_runtime_package,
 )
 from cn_model_hub.auth.dependencies import get_current_user, get_optional_user
 from cn_model_hub.auth.permissions import (
@@ -24,6 +31,7 @@ from cn_model_hub.auth.permissions import (
     check_repo_read_permission,
     check_repo_write_permission,
 )
+from cn_model_hub.config import cfg
 from cn_model_hub.db import EvaluationRun, Repository, User
 from cn_model_hub.db_operations import get_repository
 from cn_model_hub.logger import get_logger
@@ -38,6 +46,8 @@ SUPPORTED_MODEL_FAMILY = "qwen2.5"
 SUPPORTED_LEADERBOARD = "generative_llm"
 QUICK_EVAL_TOTAL = 20
 EVAL_TIMEOUT_SECONDS = 20 * 60
+REMOTE_EVAL_POLL_SECONDS = 2
+_evaluation_tasks: set[asyncio.Task] = set()
 
 EVAL_SCRIPT = r'''
 import json
@@ -365,10 +375,13 @@ async def _ensure_eval_python() -> Path:
 async def _run_evaluation(run_id: int) -> None:
     run = EvaluationRun.get_by_id(run_id)
     run.status = "running"
-    run.started_at = _utc_now()
+    run.started_at = run.started_at or _utc_now()
     run.save()
 
     try:
+        if _remote_enabled():
+            await _run_remote_evaluation(run)
+            return
         model_dir, commit_id = await _materialize_repo(run.repository, run.revision)
         config_path = model_dir / "config.json"
         if config_path.exists():
@@ -440,6 +453,106 @@ async def _run_evaluation(run_id: int) -> None:
         run.save()
 
 
+async def _run_remote_evaluation(run: EvaluationRun) -> None:
+    remote_key = _remote_runtime_key(
+        run.repository.repo_type, run.repository.namespace, run.repository.name
+    )
+    evaluation_key = f"quick-eval-{run.id}"
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        status_response = await client.get(
+            _remote_agent_url(f"/api/evaluation/status/{evaluation_key}"),
+            headers=_remote_headers(),
+        )
+    if status_response.status_code >= 400:
+        raise RuntimeError(status_response.text)
+    status = status_response.json()
+    commit_id = status.get("commit_id")
+
+    if status.get("status") == "not_found":
+        model_dir, commit_id = await _materialize_repo(run.repository, run.revision)
+        dataset_path = await _resolve_ceval_dataset_path(run.dataset_repo)
+        items = [
+            json.loads(line)
+            for line in dataset_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        package_path = _create_runtime_tar(model_dir)
+        try:
+            await _upload_runtime_package(remote_key, package_path)
+        finally:
+            package_path.unlink(missing_ok=True)
+        payload = {
+            "evaluation_key": evaluation_key,
+            "runtime_key": remote_key,
+            "repo_id": f"{run.repository.namespace}/{run.repository.name}",
+            "commit_id": commit_id,
+            "remote_root": cfg.app.space_runtime_remote_root,
+            "dataset": items,
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                _remote_agent_url("/api/evaluation/start"),
+                headers=_remote_headers(),
+                json=payload,
+            )
+        if response.status_code >= 400:
+            raise RuntimeError(response.text)
+        status = response.json()
+
+    deadline = asyncio.get_running_loop().time() + EVAL_TIMEOUT_SECONDS
+    while status.get("status") in {"pending", "running"}:
+        if asyncio.get_running_loop().time() >= deadline:
+            raise RuntimeError("远程评测超时")
+        await asyncio.sleep(REMOTE_EVAL_POLL_SECONDS)
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                _remote_agent_url(f"/api/evaluation/status/{evaluation_key}"),
+                headers=_remote_headers(),
+            )
+        if response.status_code >= 400:
+            raise RuntimeError(response.text)
+        status = response.json()
+
+    if status.get("status") != "completed":
+        error = status.get("error") or "远程评测失败"
+        logs = "\n".join(status.get("logs") or [])[-2000:]
+        raise RuntimeError(f"{error}\n{logs}".strip())
+
+    result = status.get("result") or {}
+    current = EvaluationRun.get_by_id(run.id)
+    current.status = "completed"
+    current.commit_id = commit_id or current.commit_id
+    current.total = int(result.get("total") or QUICK_EVAL_TOTAL)
+    current.correct = int(result.get("correct") or 0)
+    current.accuracy = float(result.get("accuracy") or 0.0)
+    current.result_json = json.dumps(result, ensure_ascii=False)
+    current.finished_at = _utc_now()
+    current.error = None
+    current.save()
+
+
+def schedule_evaluation(run_id: int) -> None:
+    task = asyncio.create_task(_run_evaluation(run_id))
+    _evaluation_tasks.add(task)
+    task.add_done_callback(_evaluation_tasks.discard)
+
+
+def recover_interrupted_evaluations() -> int:
+    interrupted = list(
+        EvaluationRun.select().where(EvaluationRun.status.in_(["pending", "running"]))
+    )
+    for run in interrupted:
+        if _remote_enabled():
+            schedule_evaluation(run.id)
+        else:
+            run.status = "failed"
+            run.error = "API 服务在评测期间重启，原评测进程已中断，请重新发起评测"
+            run.finished_at = _utc_now()
+            run.save()
+    return len(interrupted)
+
+
 @router.post("/{repo_type}s/{namespace}/{name}/evaluations/quick")
 async def start_quick_evaluation(
     repo_type: str,
@@ -492,7 +605,7 @@ async def start_quick_evaluation(
         total=QUICK_EVAL_TOTAL,
         status="pending",
     )
-    asyncio.create_task(_run_evaluation(run.id))
+    schedule_evaluation(run.id)
     return _serialize_run(run)
 
 

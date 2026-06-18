@@ -504,8 +504,11 @@ async def _materialize_repo(repo: Repository, revision: str) -> tuple[Path, str]
             logger.warning(f"Skipping unsafe runtime path: {path}")
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(
-            await client.get_object(repository=lakefs_repo, ref=commit_id, path=path)
+        await client.download_object(
+            repository=lakefs_repo,
+            ref=commit_id,
+            path=path,
+            target=target,
         )
 
     (tmpdir / ".cn_model_hub_synced").write_text(commit_id, encoding="utf-8")
@@ -523,7 +526,9 @@ def _create_runtime_tar(workdir: Path) -> Path:
     )
     os.close(fd)
     package_path = Path(package_name)
-    with tarfile.open(package_path, "w:gz") as archive:
+    # Model weights are already compressed and can be tens of gigabytes.
+    # Gzip adds minutes of CPU time without materially reducing the upload.
+    with tarfile.open(package_path, "w") as archive:
         for child in workdir.iterdir():
             if child.name == ".cn_model_hub_runtime_venv":
                 continue

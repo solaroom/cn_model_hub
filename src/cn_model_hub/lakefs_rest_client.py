@@ -12,6 +12,7 @@ once per connection, not per request — important for the path-filtered
 which fan out N parallel requests per page.
 """
 
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
@@ -182,6 +183,30 @@ class LakeFSRestClient:
         )
         self._check_response(response)
         return response.content
+
+    async def download_object(
+        self,
+        repository: str,
+        ref: str,
+        path: str,
+        target: Path,
+        *,
+        chunk_size: int = 8 * 1024 * 1024,
+    ) -> None:
+        """Stream an object to disk without buffering it in process memory."""
+        url = f"{self.base_url}/repositories/{repository}/refs/{ref}/objects"
+        client = self._httpx()
+        async with client.stream(
+            "GET",
+            url,
+            params={"path": path},
+            auth=self.auth,
+            timeout=None,
+        ) as response:
+            self._check_response(response)
+            with target.open("wb") as fh:
+                async for chunk in response.aiter_bytes(chunk_size):
+                    fh.write(chunk)
 
     async def stat_object(
         self, repository: str, ref: str, path: str, user_metadata: bool = True

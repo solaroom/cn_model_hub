@@ -38,9 +38,11 @@ class FakeProcess:
 def reset_runtime_state():
     agent.runtimes.clear()
     agent.runtime_locks.clear()
+    agent.evaluations.clear()
     yield
     agent.runtimes.clear()
     agent.runtime_locks.clear()
+    agent.evaluations.clear()
 
 
 @pytest.mark.asyncio
@@ -107,3 +109,24 @@ def test_health_reports_all_active_models(monkeypatch):
 
     assert result["active_runtime_keys"] == ["model-a", "model-b"]
     assert result["active_runtime_count"] == 2
+
+
+def test_evaluation_script_requires_cuda_and_validates_checkpoint():
+    assert 'if not torch.cuda.is_available()' in agent.EVALUATION_SCRIPT
+    assert "torch_dtype=torch.bfloat16" in agent.EVALUATION_SCRIPT
+    assert "output_embeddings.weight.abs().max().item() == 0" in agent.EVALUATION_SCRIPT
+
+
+def test_public_evaluation_status_reports_missing_and_completed():
+    assert agent.public_evaluation_status("missing")["status"] == "not_found"
+    agent.evaluations["eval-1"] = {
+        "status": "completed",
+        "runtime_key": "model-alice-one",
+        "result": {"total": 20, "correct": 10, "accuracy": 0.5},
+        "logs": [],
+    }
+
+    status = agent.public_evaluation_status("eval-1")
+
+    assert status["status"] == "completed"
+    assert status["result"]["accuracy"] == 0.5

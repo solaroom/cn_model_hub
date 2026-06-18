@@ -74,6 +74,12 @@ async def lifespan(app: FastAPI):
 
     init_storage()
 
+    recovered_evaluations = evaluations.recover_interrupted_evaluations()
+    if recovered_evaluations:
+        logger.warning(
+            f"Recovered {recovered_evaluations} interrupted quick evaluation(s)"
+        )
+
     # Initialize L2 cache (Valkey) — silent if disabled or unreachable.
     # Runs the boot-time flush coordinator so Mode-B namespaces are wiped
     # whenever Valkey's run_id has changed since the last seen value

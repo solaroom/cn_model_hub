@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import os
 import shutil
 import socket
@@ -26,6 +28,7 @@ SKIP_TORCH_INSTALL = os.getenv("CN_MODEL_HUB_RUNTIME_SKIP_TORCH_INSTALL", "true"
 app = FastAPI(title="cn_model_hub Runtime Agent", version="1.3.0")
 runtimes: dict[str, dict[str, Any]] = {}
 runtime_locks: dict[str, asyncio.Lock] = {}
+evaluations: dict[str, dict[str, Any]] = {}
 
 
 class RuntimeStartRequest(BaseModel):
@@ -44,6 +47,94 @@ class RuntimeStartRequest(BaseModel):
 class RuntimeStopRequest(BaseModel):
     runtime_key: str
     reason: str = "manual stop"
+
+
+class EvaluationStartRequest(BaseModel):
+    evaluation_key: str
+    runtime_key: str
+    repo_id: str
+    commit_id: str
+    remote_root: str | None = None
+    dataset: list[dict[str, Any]]
+
+
+EVALUATION_SCRIPT = r'''
+import json
+import re
+import sys
+from pathlib import Path
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_dir = Path(sys.argv[1]).resolve()
+dataset_path = Path(sys.argv[2]).resolve()
+output_path = Path(sys.argv[3]).resolve()
+if not torch.cuda.is_available():
+    raise RuntimeError("Remote quick evaluation requires CUDA")
+
+tokenizer = AutoTokenizer.from_pretrained(
+    model_dir, trust_remote_code=True, local_files_only=True
+)
+model = AutoModelForCausalLM.from_pretrained(
+    model_dir,
+    torch_dtype=torch.bfloat16,
+    trust_remote_code=True,
+    local_files_only=True,
+).to("cuda").eval()
+output_embeddings = model.get_output_embeddings()
+if output_embeddings is not None and output_embeddings.weight.abs().max().item() == 0:
+    raise RuntimeError(
+        "Model output embedding weights are all zero; the uploaded checkpoint is invalid"
+    )
+
+def prompt(item):
+    choices = item["choices"]
+    return (
+        "请完成下面的中文单项选择题。只输出一个大写字母 A、B、C 或 D，不要解释。\n\n"
+        f"科目：{item.get('subject', '')}\n题目：{item['question']}\n"
+        f"A. {choices['A']}\nB. {choices['B']}\nC. {choices['C']}\nD. {choices['D']}\n答案："
+    )
+
+details = []
+correct = 0
+items = json.loads(dataset_path.read_text(encoding="utf-8"))
+for item in items:
+    text = prompt(item)
+    if getattr(tokenizer, "chat_template", None):
+        text = tokenizer.apply_chat_template(
+            [{"role": "user", "content": text}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+    inputs = tokenizer(text, return_tensors="pt").to("cuda")
+    inputs.pop("token_type_ids", None)
+    with torch.inference_mode():
+        generated = model.generate(
+            **inputs,
+            max_new_tokens=4,
+            do_sample=False,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    new_tokens = generated[0][inputs["input_ids"].shape[-1]:]
+    raw = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+    match = re.search(r"[ABCD]", raw.upper())
+    prediction = match.group(0) if match else ""
+    expected = str(item["answer"]).strip().upper()
+    ok = prediction == expected
+    correct += int(ok)
+    details.append({
+        "id": item.get("id"), "subject": item.get("subject"),
+        "answer": expected, "prediction": prediction,
+        "raw_prediction": raw, "correct": ok,
+    })
+
+output_path.write_text(json.dumps({
+    "total": len(items), "correct": correct,
+    "accuracy": correct / len(items) if items else 0.0,
+    "details": details,
+}, ensure_ascii=False), encoding="utf-8")
+'''
 
 
 BUILTIN_MODEL_APP = r'''
@@ -169,6 +260,21 @@ def runtime_lock(runtime_key: str) -> asyncio.Lock:
     return runtime_locks.setdefault(runtime_key, asyncio.Lock())
 
 
+def public_evaluation_status(evaluation_key: str) -> dict[str, Any]:
+    state = evaluations.get(evaluation_key)
+    if not state:
+        return {"status": "not_found", "evaluation_key": evaluation_key}
+    return {
+        "status": state.get("status", "pending"),
+        "evaluation_key": evaluation_key,
+        "runtime_key": state.get("runtime_key"),
+        "commit_id": state.get("commit_id"),
+        "result": state.get("result"),
+        "error": state.get("error"),
+        "logs": list(state.get("logs") or []),
+    }
+
+
 def public_runtime_status(runtime_key: str) -> dict[str, Any]:
     state = runtimes.get(runtime_key)
     active_keys = active_runtime_keys()
@@ -209,7 +315,7 @@ def public_runtime_status(runtime_key: str) -> dict[str, Any]:
 
 def safe_extract(archive_path: Path, target: Path) -> None:
     target_resolved = target.resolve()
-    with tarfile.open(archive_path, "r:gz") as archive:
+    with tarfile.open(archive_path, "r:*") as archive:
         for member in archive.getmembers():
             member_path = (target / member.name).resolve()
             if target_resolved not in [member_path, *member_path.parents]:
@@ -353,6 +459,115 @@ async def stop_runtime_process(runtime_key: str, reason: str) -> dict[str, Any]:
         return public_runtime_status(runtime_key)
 
 
+def prepare_runtime_source(root: Path, commit_id: str) -> Path:
+    current = root / "current"
+    commit_file = root / ".commit"
+    installed_commit = (
+        commit_file.read_text(encoding="utf-8").strip() if commit_file.exists() else ""
+    )
+    if current.exists() and installed_commit == commit_id:
+        return current
+    source = root / "incoming" / "source.tar.gz"
+    if not source.exists():
+        raise RuntimeError(f"Missing uploaded runtime package: {source}")
+    incoming_current = root / "incoming" / "current"
+    if incoming_current.exists():
+        shutil.rmtree(incoming_current)
+    incoming_current.mkdir(parents=True, exist_ok=True)
+    safe_extract(source, incoming_current)
+    if current.exists():
+        shutil.rmtree(current)
+    shutil.move(str(incoming_current), str(current))
+    commit_file.write_text(commit_id, encoding="utf-8")
+    source.unlink(missing_ok=True)
+    return current
+
+
+async def run_evaluation(req: EvaluationStartRequest) -> None:
+    state = evaluations[req.evaluation_key]
+    state["status"] = "running"
+    try:
+        async with runtime_lock(req.runtime_key):
+            runtime_state = runtimes.get(req.runtime_key)
+            proc = runtime_state.get("process") if runtime_state else None
+            if proc and proc.returncode is None:
+                proc.terminate()
+                try:
+                    await asyncio.wait_for(proc.wait(), timeout=10)
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await proc.wait()
+                runtime_state["status"] = "stopped"
+                runtime_state["message"] = "Runtime stopped for quick evaluation."
+
+            root = runtime_dir(req.runtime_key, req.remote_root)
+            root.mkdir(parents=True, exist_ok=True)
+            current = prepare_runtime_source(root, req.commit_id)
+            digest = hashlib.sha256(req.evaluation_key.encode()).hexdigest()[:16]
+            workdir = root / "evaluations" / digest
+            workdir.mkdir(parents=True, exist_ok=True)
+            dataset_path = workdir / "dataset.json"
+            script_path = workdir / "evaluate.py"
+            result_path = workdir / "result.json"
+            dataset_path.write_text(
+                json.dumps(req.dataset, ensure_ascii=False), encoding="utf-8"
+            )
+            script_path.write_text(EVALUATION_SCRIPT, encoding="utf-8")
+            python = await ensure_venv(state, root)
+            process = await asyncio.create_subprocess_exec(
+                str(python), str(script_path), str(current), str(dataset_path),
+                str(result_path), cwd=str(workdir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                env={**os.environ, "TRANSFORMERS_OFFLINE": "1", "HF_HUB_OFFLINE": "1"},
+            )
+            state["process"] = process
+            try:
+                output, _ = await asyncio.wait_for(process.communicate(), timeout=20 * 60)
+            except asyncio.TimeoutError as exc:
+                process.kill()
+                await process.communicate()
+                raise RuntimeError("Remote evaluation timed out") from exc
+            output_text = output.decode(errors="replace")
+            for line in output_text.splitlines()[-100:]:
+                append_log(state, line)
+            if process.returncode != 0:
+                raise RuntimeError(
+                    f"Evaluation process exited with code {process.returncode}: "
+                    + output_text[-3000:]
+                )
+            state["result"] = json.loads(result_path.read_text(encoding="utf-8"))
+            state["status"] = "completed"
+    except Exception as exc:
+        state["status"] = "failed"
+        state["error"] = str(exc)
+        append_log(state, f"Evaluation failed: {exc}")
+
+
+@app.post("/api/evaluation/start", dependencies=[Depends(require_runtime_api_key)])
+async def evaluation_start(req: EvaluationStartRequest) -> dict[str, Any]:
+    existing = evaluations.get(req.evaluation_key)
+    if existing:
+        return public_evaluation_status(req.evaluation_key)
+    evaluations[req.evaluation_key] = {
+        "status": "pending",
+        "runtime_key": req.runtime_key,
+        "repo_id": req.repo_id,
+        "commit_id": req.commit_id,
+        "logs": deque(maxlen=RUNTIME_LOG_LINES),
+    }
+    asyncio.create_task(run_evaluation(req))
+    return public_evaluation_status(req.evaluation_key)
+
+
+@app.get(
+    "/api/evaluation/status/{evaluation_key}",
+    dependencies=[Depends(require_runtime_api_key)],
+)
+async def evaluation_status(evaluation_key: str) -> dict[str, Any]:
+    return public_evaluation_status(evaluation_key)
+
+
 @app.get("/api/runtime/status/{runtime_key}", dependencies=[Depends(require_runtime_api_key)])
 async def runtime_status(runtime_key: str) -> dict[str, Any]:
     return public_runtime_status(runtime_key)
@@ -373,8 +588,6 @@ async def runtime_start(req: RuntimeStartRequest) -> dict[str, Any]:
 
         root = runtime_dir(req.runtime_key, req.remote_root)
         root.mkdir(parents=True, exist_ok=True)
-        current = root / "current"
-        commit_file = root / ".commit"
         state = {
             "status": "starting",
             "runtime_key": req.runtime_key,
@@ -385,23 +598,7 @@ async def runtime_start(req: RuntimeStartRequest) -> dict[str, Any]:
         }
         runtimes[req.runtime_key] = state
         try:
-            if not current.exists() or not commit_file.exists() or commit_file.read_text(encoding="utf-8").strip() != req.commit_id:
-                source = root / "incoming" / "source.tar.gz"
-                if not source.exists():
-                    raise RuntimeError(f"Missing uploaded runtime package: {source}")
-                incoming_current = root / "incoming" / "current"
-                if incoming_current.exists():
-                    shutil.rmtree(incoming_current)
-                incoming_current.mkdir(parents=True, exist_ok=True)
-                safe_extract(source, incoming_current)
-                if current.exists():
-                    shutil.rmtree(current)
-                shutil.move(str(incoming_current), str(current))
-                commit_file.write_text(req.commit_id, encoding="utf-8")
-                try:
-                    source.unlink()
-                except OSError:
-                    pass
+            current = prepare_runtime_source(root, req.commit_id)
 
             app_file = current / req.app_entry
             if req.using_builtin_model_app and not app_file.exists():
