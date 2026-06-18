@@ -107,7 +107,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="detail in run.result.details.slice(0, 5)"
+                v-for="detail in run.result.details"
                 :key="detail.id"
                 class="border-t border-gray-100 dark:border-gray-800"
               >
