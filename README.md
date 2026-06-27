@@ -1,77 +1,94 @@
 # cn_model_hub
 
-`cn_model_hub` 是一个面向中文开源 AI 模型的社区平台，参考 Hugging Face Hub 的核心使用体验，提供模型托管、数据集管理、在线 Demo、中文搜索、快速评测、排行榜、MLflow 实验追踪和站内智能助手。
+中文开源 AI 模型社区 `cn_model_hub` 是一个面向中文模型生态的轻量级模型托管平台。项目参考 Hugging Face Hub 的核心使用方式，完成了用户系统、模型仓库、数据集仓库、Space/Demo、中文搜索、智能助手、快速评测、排行榜、MLflow 实验追踪和 Docker Compose 部署能力。
 
-## 功能概览
+本仓库为课程结题提交版源码，已整理为可阅读、可部署、可测试的完整项目结构。提交包不包含依赖目录、运行缓存、数据库数据和模型权重文件。
 
-- 用户与权限：注册、登录、个人主页、访问 Token、基础权限控制。
-- 模型仓库：创建模型仓库、上传/下载文件、README 模型卡片、文件树和提交记录。
-- 数据集仓库：上传数据文件、README 展示、Parquet/JSON 等结构化数据预览。
-- Space Demo：支持仓库内 `app.py` 或内置模型 Demo 模板，在线运行 Gradio 应用。
-- 中文模型元数据：展示模型家族、任务类型、参数量、上下文长度、推理框架、中文能力和标签。
-- 中文搜索：接入 Meilisearch，支持模型、数据集、Space 搜索；搜索服务不可用时回退数据库搜索。
-- 快速评测：对 Qwen2.5 类生成式模型使用 C-Eval 20 题样本进行快速评测。
-- 排行榜：首页和榜单页展示生成式大语言模型排名。
-- MLflow：模型页展示实验追踪信息，Docker Compose 集成 MLflow Tracking Server。
-- 智能助手：基于平台知识库和站内搜索回答使用问题，并返回来源链接。
-- 远端 GPU：本地平台作为控制面，可把 Space Demo 和快速评测切换到远端 GPU Runtime Agent 执行。
+## 项目完成情况
+
+| 模块 | 完成内容 | 状态 |
+| --- | --- | --- |
+| 用户系统 | 注册、登录、Session、Token、个人主页、头像 | 完成 |
+| 组织和权限 | 组织、邀请、公开/私有仓库权限 | 完成 |
+| 仓库系统 | model/dataset/space 仓库、README、文件树、提交记录 | 完成 |
+| 文件系统 | 上传前检查、LFS 大文件、下载、预览 | 完成 |
+| 搜索系统 | Meilisearch、中文别名、数据库回退 | 完成 |
+| 智能助手 | 平台知识库问答、资源搜索聚合、可选 LLM 整理 | 完成 |
+| Space/Demo | 本地 Gradio Demo、模型/Space 仓库运行入口 | 完成 |
+| 远端 GPU | 可选 Runtime Agent，把 Demo 和评测切换到远端 GPU 执行 | 完成 |
+| 快速评测 | C-Eval 样本评测、EvaluationRun、排行榜 | 完成 |
+| MLflow | Tracking Server 集成、仓库绑定信息 | 完成 |
+| 部署 | Docker Compose、本地演示环境、部署说明 | 完成 |
+| 测试 | 后端 pytest、前端 Vitest、人工验收用例 | 完成 |
 
 ## 技术栈
 
-- 后端：FastAPI、Peewee、PostgreSQL、S3/MinIO、LakeFS、Meilisearch、MLflow。
-- 前端：Vue 3、Vite、UnoCSS、Pinia、Vitest。
-- Demo/推理：Gradio、Transformers、PyTorch。
-- 部署：Docker Compose；远端 GPU 通过 SSH 上传运行包并调用 Runtime Agent。
+- 后端：FastAPI、Peewee、PostgreSQL、Uvicorn
+- 前端：Vue 3、Vite、Pinia、UnoCSS、Vitest
+- 存储：LakeFS、MinIO/S3、LFS 大文件管理
+- 搜索：Meilisearch，支持中文模型别名和数据库回退
+- 缓存：Valkey
+- AI 能力：Transformers、Gradio、C-Eval 快速评测、智能助手 RAG
+- 实验追踪：MLflow Tracking Server
+- 部署：Docker、Docker Compose、Nginx，可选远端 GPU Runtime Agent
 
-## 项目结构
+## 目录结构
 
 ```text
 cn_model_hub/
-├── src/cn_model_hub/              # FastAPI 后端、数据库模型、搜索、评测、Space 运行时
-├── src/cn-model-hub-ui/           # Vue 前端
-├── docs/platform-knowledge/       # 智能助手检索的中文知识库
-├── examples/models/               # 演示模型模板
-├── examples/datasets/             # C-Eval 快速评测样本等演示数据
-├── examples/spaces/               # Space Demo 示例
-├── scripts/dev/                   # 本地初始化、演示数据和验证脚本
+├── src/cn_model_hub/              # FastAPI 后端、API、认证、仓库、搜索、评测、Space 运行逻辑
+├── src/cn-model-hub-ui/           # 用户前台，包含模型、数据集、Space、排行榜、助手页面
+├── test/cn_model_hub/             # 后端 pytest 测试
+├── test/cn-model-hub-ui/          # 前端 Vitest 测试
+├── docs/platform-knowledge/       # 智能助手平台知识库
+├── scripts/dev/                   # 本地初始化、演示数据和开发辅助脚本
 ├── scripts/db_migrations/         # 数据库迁移脚本
-├── scripts/remote_runtime_agent.py # 远端 GPU Runtime Agent
-├── docker/                        # Nginx、LakeFS 和后端启动脚本
-├── docker-compose.yml             # 本地演示部署
+├── scripts/remote_runtime_agent.py # 可选远端 GPU Runtime Agent
+├── docker/                        # Nginx、LakeFS 和容器启动相关配置
+├── images/                        # Logo、站点图标和品牌素材
+├── Dockerfile                     # 后端容器构建文件
+├── docker-compose.yml             # 本地完整演示环境
 ├── config-example.toml            # 配置模板
-└── .env.dev.example               # 本地开发环境变量模板
+├── .env.dev.example               # 本地开发环境变量模板
+├── pyproject.toml                 # Python 项目依赖和打包配置
+├── package.json                   # 前端 workspace 脚本
+└── README.md                      # 项目说明
 ```
 
-运行数据和缓存目录包括 `hub-meta/`、`hub-storage/`、`.space-runtimes/`、`logs/`，不作为项目源码提交。
+运行过程中会生成 `hub-meta/`、`hub-storage/`、`.space-runtimes/`、`src/cn-model-hub-ui/dist/`、`logs/` 等目录，这些属于运行数据或构建产物，不作为源码提交内容。
 
-## 本地部署
+## 快速运行
 
 ### 1. 准备环境
 
-需要安装：
+建议使用以下版本：
 
 - Python 3.10+
 - Node.js 20+
 - pnpm 10+
-- Docker 和 Docker Compose
+- Docker Desktop / Docker Compose
 
-首次运行可复制配置模板：
+复制配置模板：
 
 ```bash
 cp .env.dev.example .env.dev
 cp config-example.toml config.toml
 ```
 
-不要把真实 API Key、远端 Runtime Agent Key 或服务器密码提交到仓库。
-
-### 2. 安装并构建前端
+安装前端依赖并构建页面：
 
 ```bash
 pnpm install
 pnpm run build
 ```
 
-### 3. 启动完整演示环境
+安装后端开发依赖：
+
+```bash
+python -m pip install -e ".[dev,assistant]"
+```
+
+### 2. 启动 Docker Compose 环境
 
 ```bash
 docker compose up -d --build
@@ -83,118 +100,50 @@ docker compose up -d --build
 docker compose up -d --build hub-api hub-ui
 ```
 
-常用地址：
-
-- 前台页面：http://127.0.0.1:28080
-- 后端 API：http://127.0.0.1:48888
-- API 文档：http://127.0.0.1:48888/docs
-- LakeFS：http://127.0.0.1:28000
-- MinIO 控制台：http://127.0.0.1:29000
-- Meilisearch：http://127.0.0.1:27700
-- MLflow：http://127.0.0.1:25000
-
-## 演示数据
-
-- 演示账号：`mai_lin`
-- 演示密码：`CnModelHub123!`
-- Meilisearch Key：`dev-meili-master-key`
-- MinIO：`minioadmin / minioadmin`
-- 演示模型：`qwen_demo/qwen2.5-0.5b-instruct`
-- 演示数据集：`c-eval`
-- 演示 Space：Qwen2.5 对话 Demo
-- 快速评测：C-Eval 20 题
-- 排行榜：生成式大语言模型排行榜
-
-## 远端 GPU 部署与调用
-
-项目支持把模型 Demo 和快速评测从本地机器迁移到远端 GPU。平台本地服务负责用户权限、仓库文件和页面展示；远端 GPU 只负责接收运行包、启动模型进程、提供状态/日志/代理接口。
-
-### 1. 远端服务器
-
-远端 GPU 是可选执行环境。部署时需要准备一台可通过 SSH 访问、已安装 Python/PyTorch/CUDA 运行环境的服务器，并为 Runtime Agent 配置可访问的 HTTPS Base URL。
-
-健康检查：
+查看服务状态：
 
 ```bash
-curl "$CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_BASE_URL/health"
+docker compose ps
 ```
 
-### 2. 部署 Runtime Agent
-
-把 agent 脚本上传到远端：
+停止服务：
 
 ```bash
-ssh <ssh-alias> "mkdir -p <remote-agent-dir>"
-scp scripts/remote_runtime_agent.py <ssh-alias>:<remote-agent-dir>/server.py
+docker compose down
 ```
 
-在远端启动服务：
+## 访问地址
 
-```bash
-cd <remote-agent-dir>
-export RUNTIME_AGENT_API_KEY="<runtime-agent-key>"
-export CN_MODEL_HUB_RUNTIME_ROOT=<remote-runtime-root>
-export CN_MODEL_HUB_RUNTIME_SKIP_TORCH_INSTALL=true
-nohup python -m uvicorn server:app <uvicorn-listen-options> > server.log 2>&1 &
-echo $! > server.pid
-```
+| 服务 | 地址 |
+| --- | --- |
+| 前台页面 | http://127.0.0.1:28080 |
+| 后端 API | http://127.0.0.1:48888 |
+| API 文档 | http://127.0.0.1:48888/docs |
+| LakeFS | http://127.0.0.1:28000 |
+| MinIO 控制台 | http://127.0.0.1:29000 |
+| Meilisearch | http://127.0.0.1:27700 |
+| MLflow | http://127.0.0.1:25000 |
 
-查看日志：
+## 演示账号和本地配置
 
-```bash
-ssh <ssh-alias> "tail -n 80 <remote-agent-dir>/server.log"
-```
+| 项目 | 值 |
+| --- | --- |
+| Meilisearch Key | `dev-meili-master-key` |
+| MinIO | `minioadmin / minioadmin` |
 
-### 3. 本地平台启用远端 GPU
+Docker Compose 中使用的是本地演示配置，生产环境部署时应替换 `CN_MODEL_HUB_SESSION_SECRET`、`CN_MODEL_HUB_ADMIN_SECRET_TOKEN`、数据库密码、MinIO 密钥和 LLM API Key。不要把真实 API Key、远端 Runtime Agent Key、服务器地址或 SSH 凭据提交到仓库。
 
-在本地 `.env.dev` 或部署环境变量中配置：
+## 核心功能说明
 
-```bash
-CN_MODEL_HUB_SPACE_RUNTIME_BACKEND=remote
-CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_BASE_URL=<runtime-agent-base-url>
-CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_API_KEY=<runtime-agent-key>
-CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_UPLOAD_METHOD=ssh
-CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_SSH_ALIAS=<ssh-alias>
-CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_ROOT=<remote-runtime-root>
-```
+### 模型和数据集仓库
 
-然后重启后端：
+平台支持创建 `model`、`dataset`、`space` 三类仓库。用户可以上传文件、查看 README、浏览文件树、下载资源、查看提交记录，并通过 LakeFS + MinIO/S3 管理文件版本和对象存储。
 
-```bash
-docker compose up -d --force-recreate hub-api
-```
+### 中文搜索
 
-启用后，模型仓库页的“运行”和快速评测会通过本地后端打包仓库文件、SSH 上传到远端 GPU，再由 Runtime Agent 启动 Gradio 或评测任务。
+搜索服务接入 Meilisearch，支持模型、数据集和 Space 的统一检索。搜索逻辑中包含中文关键词扩展和模型别名映射。搜索索引不可用时，后端会回退到数据库查询，保证演示流程不中断。
 
-## 智能助手配置
-
-助手入口：
-
-```text
-http://127.0.0.1:28080/assistant
-```
-
-后端接口：
-
-```bash
-curl -X POST http://127.0.0.1:48888/api/assistant/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question":"帮我找 Qwen2.5 0.5B 的模型，并解释怎么运行 Demo"}'
-```
-
-如果需要调用外部大模型整理答案，通过环境变量注入密钥：
-
-```bash
-CN_MODEL_HUB_ASSISTANT_LLM_API_KEY=<your-api-key>
-CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-CN_MODEL_HUB_ASSISTANT_LLM_MODEL=qwen3.7-max
-```
-
-没有配置 API Key 时，助手仍会返回本地检索整理结果。
-
-## 常用维护命令
-
-重建站内搜索索引：
+重建搜索索引：
 
 ```bash
 curl -X POST http://127.0.0.1:48888/api/search/index/rebuild \
@@ -207,6 +156,67 @@ curl -X POST http://127.0.0.1:48888/api/search/index/rebuild \
 curl http://127.0.0.1:48888/api/search/index/status
 ```
 
+### 智能助手
+
+智能助手位于：
+
+```text
+http://127.0.0.1:28080/assistant
+```
+
+助手会检索 `docs/platform-knowledge/` 中的平台知识，并结合站内搜索接口返回模型、数据集或 Space 资源链接。若配置了外部 OpenAI 兼容 LLM API Key，后端会调用大模型整理答案；未配置时，仍会返回本地检索结果。
+
+可选 LLM 配置示例：
+
+```bash
+export CN_MODEL_HUB_ASSISTANT_LLM_API_KEY="<your-api-key>"
+export CN_MODEL_HUB_ASSISTANT_LLM_BASE_URL="<llm-compatible-base-url>"
+export CN_MODEL_HUB_ASSISTANT_LLM_MODEL="<llm-model-name>"
+docker compose up -d --force-recreate hub-api
+```
+
+### Space/Demo
+
+Space 页面支持模型或仓库 Demo 的运行入口。后端会同步仓库文件，启动 Gradio 运行时，并把运行地址返回给前端页面，便于在平台内直接体验模型资源。
+
+若配置远端 GPU Runtime Agent，模型仓库页的“运行”和快速评测可以切换到远端 GPU 执行；未配置时默认使用本地运行时。
+
+远端 GPU 配置示例：
+
+```bash
+CN_MODEL_HUB_SPACE_RUNTIME_BACKEND=remote
+CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_BASE_URL=<runtime-agent-base-url>
+CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_API_KEY=<runtime-agent-key>
+CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_UPLOAD_METHOD=ssh
+CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_SSH_ALIAS=<ssh-alias>
+CN_MODEL_HUB_SPACE_RUNTIME_REMOTE_ROOT=<remote-runtime-root>
+```
+
+远端 Agent 脚本位于 `scripts/remote_runtime_agent.py`。具体服务器地址、监听端口、SSH 别名和密钥应在部署环境中配置，不写入仓库。
+
+### 快速评测和排行榜
+
+快速评测用于课程演示中的模型效果闭环：
+
+1. 用户进入模型页面。
+2. 选择快速评测。
+3. 后端创建 EvaluationRun。
+4. 使用 C-Eval 样本进行评测。
+5. 将准确率写入排行榜。
+6. 首页和排行榜页展示模型排名。
+
+完整榜单页面：
+
+```text
+/leaderboards/generative-llm
+```
+
+### MLflow 实验追踪
+
+项目集成 MLflow Tracking Server，用于展示模型实验追踪和评测相关信息。Docker Compose 中的 `mlflow` 服务提供本地演示环境，后端通过 `MLFLOW_TRACKING_URI` 连接到该服务。
+
+## 测试
+
 运行后端测试：
 
 ```bash
@@ -218,3 +228,30 @@ python -m pytest
 ```bash
 pnpm test
 ```
+
+运行前端构建检查：
+
+```bash
+pnpm run build
+```
+
+## 验收要点
+
+- 前台页面可以访问。
+- API 文档可以访问。
+- 演示账号可以登录。
+- 模型、数据集、Space 页面存在并可浏览。
+- 文件上传、下载、README 展示和文件树可用。
+- 中文搜索和智能助手可演示。
+- Space/Demo 可以从页面进入。
+- 快速评测和排行榜形成闭环。
+- Docker Compose 可以启动本地演示环境。
+- 提交包不包含依赖目录、运行缓存和数据库数据。
+
+## 项目成员分工
+
+略
+
+## 提交说明
+
+本源码目录用于课程结题提交，配套 PDF 文档位于提交包的 `项目文档/` 目录和根目录中。源码保留必要配置、脚本、测试和说明文件，运行生成的数据目录不随提交包附带。
