@@ -1,6 +1,10 @@
 """Unit tests for quick evaluation helpers."""
 
-from cn_model_hub.api.evaluations import EVAL_SCRIPT, _evaluation_tasks
+from cn_model_hub.api.evaluations import (
+    EVAL_SCRIPT,
+    _evaluation_tasks,
+    _remote_commit_matches,
+)
 
 
 def test_eval_script_filters_token_type_ids_before_generate():
@@ -20,3 +24,18 @@ def test_eval_script_prefers_dtype_with_torch_dtype_fallback():
 
 def test_evaluation_tasks_are_retained_until_completion():
     assert isinstance(_evaluation_tasks, set)
+
+
+def test_remote_commit_match_prefers_installed_commit():
+    status = {
+        "commit_id": "runtime-state-commit",
+        "installed_commit_id": "installed-commit",
+    }
+
+    assert _remote_commit_matches(status, "installed-commit") is True
+    assert _remote_commit_matches(status, "runtime-state-commit") is False
+
+
+def test_remote_commit_match_supports_older_agent_status():
+    assert _remote_commit_matches({"commit_id": "commit-1"}, "commit-1") is True
+    assert _remote_commit_matches({}, "commit-1") is False

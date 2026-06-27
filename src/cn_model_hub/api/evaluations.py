@@ -49,6 +49,22 @@ EVAL_TIMEOUT_SECONDS = 20 * 60
 REMOTE_EVAL_POLL_SECONDS = 2
 _evaluation_tasks: set[asyncio.Task] = set()
 
+
+def _remote_commit_matches(status: dict[str, Any], commit_id: str) -> bool:
+    installed_commit = status.get("installed_commit_id") or status.get("commit_id")
+    return bool(commit_id and installed_commit == commit_id)
+
+
+async def _remote_runtime_has_commit(remote_key: str, commit_id: str) -> bool:
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.get(
+            _remote_agent_url(f"/api/runtime/status/{remote_key}"),
+            headers=_remote_headers(),
+        )
+    if response.status_code >= 400:
+        raise RuntimeError(response.text)
+    return _remote_commit_matches(response.json(), commit_id)
+
 EVAL_SCRIPT = r'''
 import json
 import re
@@ -477,11 +493,12 @@ async def _run_remote_evaluation(run: EvaluationRun) -> None:
             for line in dataset_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
-        package_path = _create_runtime_tar(model_dir)
-        try:
-            await _upload_runtime_package(remote_key, package_path)
-        finally:
-            package_path.unlink(missing_ok=True)
+        if not await _remote_runtime_has_commit(remote_key, commit_id):
+            package_path = _create_runtime_tar(model_dir)
+            try:
+                await _upload_runtime_package(remote_key, package_path)
+            finally:
+                package_path.unlink(missing_ok=True)
         payload = {
             "evaluation_key": evaluation_key,
             "runtime_key": remote_key,

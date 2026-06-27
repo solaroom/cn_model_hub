@@ -130,3 +130,29 @@ def test_public_evaluation_status_reports_missing_and_completed():
 
     assert status["status"] == "completed"
     assert status["result"]["accuracy"] == 0.5
+
+
+def test_runtime_status_reports_installed_commit(tmp_path, monkeypatch):
+    root = tmp_path / "model-alice-one"
+    root.mkdir()
+    (root / ".commit").write_text("installed-commit", encoding="utf-8")
+    monkeypatch.setattr(agent, "runtime_dir", lambda runtime_key: root)
+
+    status = agent.public_runtime_status("model-alice-one")
+
+    assert status["installed_commit_id"] == "installed-commit"
+
+
+def test_prepare_runtime_source_removes_redundant_upload(tmp_path):
+    current = tmp_path / "current"
+    incoming = tmp_path / "incoming"
+    current.mkdir()
+    incoming.mkdir()
+    (tmp_path / ".commit").write_text("commit-1", encoding="utf-8")
+    uploaded = incoming / "source.tar.gz"
+    uploaded.write_bytes(b"redundant")
+
+    result = agent.prepare_runtime_source(tmp_path, "commit-1")
+
+    assert result == current
+    assert uploaded.exists() is False

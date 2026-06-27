@@ -287,6 +287,7 @@ def public_runtime_status(runtime_key: str) -> dict[str, Any]:
             "status": "stopped",
             "runtime_key": runtime_key,
             "commit_id": commit_id,
+            "installed_commit_id": commit_id,
             "message": "Runtime is stopped.",
             "logs": [],
             "active_runtime_keys": active_keys,
@@ -302,6 +303,7 @@ def public_runtime_status(runtime_key: str) -> dict[str, Any]:
         "repo_id": state.get("repo_id"),
         "revision": state.get("revision"),
         "commit_id": state.get("commit_id") or commit_id,
+        "installed_commit_id": commit_id,
         "pid": proc.pid if proc else None,
         "port": state.get("port"),
         "message": state.get("message", ""),
@@ -467,6 +469,7 @@ def prepare_runtime_source(root: Path, commit_id: str) -> Path:
         commit_file.read_text(encoding="utf-8").strip() if commit_file.exists() else ""
     )
     if current.exists() and installed_commit == commit_id:
+        (root / "incoming" / "source.tar.gz").unlink(missing_ok=True)
         return current
     source = root / "incoming" / "source.tar.gz"
     if not source.exists():
