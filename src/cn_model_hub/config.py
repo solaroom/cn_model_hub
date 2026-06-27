@@ -209,8 +209,8 @@ class AppConfig(BaseModel):
     space_runtime_remote_base_url: str = ""
     space_runtime_remote_api_key: str = ""
     space_runtime_remote_upload_method: str = "ssh"
-    space_runtime_remote_ssh_alias: str = "seeta"
-    space_runtime_remote_root: str = "/root/autodl-tmp/cn-model-hub-runtimes"
+    space_runtime_remote_ssh_alias: str = ""
+    space_runtime_remote_root: str = ""
     # MLflow tracking endpoint. Also exported to Space runtimes as MLFLOW_TRACKING_URI.
     mlflow_tracking_uri: str = ""
     # Log settings
